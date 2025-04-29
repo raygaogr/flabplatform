@@ -1,0 +1,5 @@
+_base_: 
+  - '../_base_/default_runtime.yaml'
+  - '../_base_/models/resnet18_cifar.yaml'
+  - '../_base_/datasets/cifar10_bs16.yaml'
+  - '../_base_/schedules/cifar10_bs128.yaml'

@@ -1,0 +1,52 @@
+# dataset settings
+dataset_type :  &_dataset_type 'CIFAR10'
+data_preprocessor : 
+    num_classes: 10
+    # RGB format normalization parameters
+    mean: [125.307, 122.961, 113.8575]
+    std: [51.5865, 50.847, 51.255]
+    # loaded images are already RGB format
+    to_rgb: False
+
+train_pipeline :  &_train_pipeline
+  - type: RandomCrop
+    crop_size: 32
+    padding: 4
+  - type: RandomFlip
+    prob: 0.5
+    direction: horizontal
+  - type: PackInputs
+
+test_pipeline :  &_test_pipeline
+  - type: 'PackInputs'
+
+
+train_dataloader :  
+    batch_size: 16
+    num_workers: 2
+    dataset: 
+        type: *_dataset_type
+        data_root: 'datasets/cifar10'
+        split: 'train'
+        pipeline: *_train_pipeline
+    sampler: 
+        type: 'DefaultSampler'
+        shuffle: True
+
+val_dataloader :  &_val_dataloader
+    batch_size: 16
+    num_workers: 2
+    dataset: 
+        type: *_dataset_type
+        data_root: 'datasets/cifar10/'
+        split: 'test'
+        pipeline: *_test_pipeline
+    sampler: 
+        type: 'DefaultSampler'
+        shuffle: False
+val_evaluator :  &_val_evaluator
+    type: 'Accuracy'
+    topk: [1]
+
+test_dataloader :  *_val_dataloader
+test_evaluator :  *_val_evaluator

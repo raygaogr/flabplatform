@@ -1,0 +1,26 @@
+# optimizer
+optim_wrapper: 
+    optimizer: 
+        type: 'SGD'
+        lr: 0.1
+        momentum: 0.9
+        weight_decay: 0.0001
+# learning policy
+param_scheduler: 
+    type: 'MultiStepLR'
+    by_epoch: True
+    milestones: [100, 150]
+    gamma: 0.1
+
+# train, val, test setting
+train_cfg: 
+    by_epoch: True
+    max_epochs: 200
+    val_interval: 1
+val_cfg: {}
+test_cfg: {}
+
+# NOTE: `auto_scale_lr` is for automatically scaling LR
+# based on the actual training batch size.
+auto_scale_lr: 
+    base_batch_size: 128

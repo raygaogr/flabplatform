@@ -1,0 +1,17 @@
+# model settings
+model:
+    type: 'ImageClassifier'
+    backbone: 
+        type: 'ResNet_CIFAR'
+        depth: 18
+        num_stages: 4
+        out_indices: [3]
+    neck: 
+        type: 'GlobalAveragePooling'
+    head: 
+        type: 'LinearClsHead'
+        num_classes: 10
+        in_channels: 512
+        loss: 
+            type: 'CrossEntropyLoss'
+            loss_weight: 1.0

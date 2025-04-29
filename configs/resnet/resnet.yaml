@@ -1,0 +1,161 @@
+model_name: resnet
+auto_scale_lr:
+  base_batch_size: 128
+data_preprocessor:
+  mean:
+  - 125.307
+  - 122.961
+  - 113.8575
+  num_classes: 10
+  std:
+  - 51.5865
+  - 50.847
+  - 51.255
+  to_rgb: false
+dataset_type: CIFAR10
+default_hooks:
+  checkpoint:
+    interval: 1
+    type: CheckpointHook
+  logger:
+    interval: 100
+    type: LoggerHook
+  param_scheduler:
+    type: ParamSchedulerHook
+  sampler_seed:
+    type: DistSamplerSeedHook
+  timer:
+    type: IterTimerHook
+  visualization:
+    enable: false
+    type: VisualizationHook
+default_scope: cloudplatform.flabcls
+env_cfg:
+  cudnn_benchmark: false
+  dist_cfg:
+    backend: nccl
+  mp_cfg:
+    mp_start_method: fork
+    opencv_num_threads: 0
+launcher: none
+load_from: null
+log_level: INFO
+model:
+  backbone:
+    depth: 18
+    num_stages: 4
+    out_indices:
+    - 3
+    type: ResNet_CIFAR
+  head:
+    in_channels: 512
+    loss:
+      loss_weight: 1.0
+      type: CrossEntropyLoss
+    num_classes: 10
+    type: LinearClsHead
+  neck:
+    type: GlobalAveragePooling
+  type: ImageClassifier
+optim_wrapper:
+  optimizer:
+    lr: 0.1
+    momentum: 0.9
+    type: SGD
+    weight_decay: 0.0001
+param_scheduler:
+  by_epoch: true
+  gamma: 0.1
+  milestones:
+  - 100
+  - 150
+  type: MultiStepLR
+randomness:
+  deterministic: false
+  seed: null
+resume: false
+test_cfg: {}
+test_dataloader:
+  batch_size: 16
+  collate_fn:
+    type: default_collate
+  dataset:
+    data_root: datasets/cifar10/
+    pipeline:
+    - type: PackInputs
+    split: test
+    type: CIFAR10
+  num_workers: 2
+  persistent_workers: true
+  pin_memory: true
+  sampler:
+    shuffle: false
+    type: DefaultSampler
+test_evaluator:
+  topk:
+  - 1
+  type: Accuracy
+test_pipeline:
+- type: PackInputs
+train_cfg:
+  by_epoch: true
+  max_epochs: 200
+  val_interval: 1
+train_dataloader:
+  batch_size: 16
+  collate_fn:
+    type: default_collate
+  dataset:
+    data_root: datasets/cifar10
+    pipeline:
+    - crop_size: 32
+      padding: 4
+      type: RandomCrop
+    - direction: horizontal
+      prob: 0.5
+      type: RandomFlip
+    - type: PackInputs
+    split: train
+    type: CIFAR10
+  num_workers: 2
+  persistent_workers: true
+  pin_memory: true
+  sampler:
+    shuffle: true
+    type: DefaultSampler
+train_pipeline:
+- crop_size: 32
+  padding: 4
+  type: RandomCrop
+- direction: horizontal
+  prob: 0.5
+  type: RandomFlip
+- type: PackInputs
+val_cfg: {}
+val_dataloader:
+  batch_size: 16
+  collate_fn:
+    type: default_collate
+  dataset:
+    data_root: datasets/cifar10/
+    pipeline:
+    - type: PackInputs
+    split: test
+    type: CIFAR10
+  num_workers: 2
+  persistent_workers: true
+  pin_memory: true
+  sampler:
+    shuffle: false
+    type: DefaultSampler
+val_evaluator:
+  topk:
+  - 1
+  type: Accuracy
+vis_backends:
+- type: LocalVisBackend
+visualizer:
+  type: UniversalVisualizer
+  vis_backends:
+  - type: LocalVisBackend
+work_dir: ./work_dirs\resnet

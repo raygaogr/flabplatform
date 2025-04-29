@@ -1,0 +1,57 @@
+default_scope: 'cloudplatform.flabcls'
+
+# configure default hooks
+default_hooks:
+    # record the time of every iteration.
+    timer: 
+        type: 'IterTimerHook'
+    # print log every 100 iterations.
+    logger: 
+        type: 'LoggerHook'
+        interval: 100
+    # enable the parameter scheduler.
+    param_scheduler: 
+        type: 'ParamSchedulerHook'
+    # save checkpoint per epoch.
+    checkpoint: 
+        type: 'CheckpointHook'
+        interval: 1
+    # set sampler seed in distributed evrionment.
+    sampler_seed: 
+        type: 'DistSamplerSeedHook'
+    # validation results visualization, set True to enable it.
+    visualization: 
+        type: 'VisualizationHook'
+        enable: False
+
+# configure environment
+env_cfg:
+    # whether to enable cudnn benchmark
+    cudnn_benchmark: False
+    # set multi process parameters
+    mp_cfg: 
+        mp_start_method: 'fork'
+        opencv_num_threads: 0
+    # set distributed parameters
+    dist_cfg:
+        backend: 'nccl'
+
+vis_backends: &_vis_backends
+    - type: 'LocalVisBackend'
+visualizer: 
+    type: 'UniversalVisualizer'
+    vis_backends: *_vis_backends
+
+# set log level
+log_level: 'INFO'
+
+# load from which checkpoint
+load_from: 
+
+# whether to resume training from the loaded checkpoint
+resume: False
+
+# Defaults to use random seed and disable `deterministic`
+randomness:
+    seed: 
+    deterministic: False
