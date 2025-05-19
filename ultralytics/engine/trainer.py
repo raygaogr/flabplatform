@@ -25,20 +25,21 @@ from ultralytics.cfg import get_cfg, get_save_dir
 from ultralytics.data.utils import check_cls_dataset, check_det_dataset
 from ultralytics.nn.tasks import attempt_load_one_weight, attempt_load_weights
 from ultralytics.utils import (
+    callbacks,
+)
+from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG,
     LOCAL_RANK,
     LOGGER,
     RANK,
     TQDM,
-    __version__,
-    callbacks,
     clean_url,
     colorstr,
     emojis,
     yaml_save,
 )
 from ultralytics.utils.autobatch import check_train_batch_size
-from ultralytics.utils.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
+from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 from ultralytics.utils.dist import ddp_cleanup, generate_ddp_command
 from ultralytics.utils.files import get_latest_run
 from ultralytics.utils.torch_utils import (
@@ -543,9 +544,8 @@ class BaseTrainer:
                 "train_metrics": {**self.metrics, **{"fitness": self.fitness}},
                 "train_results": self.read_results_csv(),
                 "date": datetime.now().isoformat(),
-                "version": __version__,
-                "license": "AGPL-3.0 (https://ultralytics.com/license)",
-                "docs": "https://docs.ultralytics.com",
+                "license": "",
+                "docs": "",
             },
             buffer,
         )

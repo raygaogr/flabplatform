@@ -10,9 +10,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ultralytics.utils import LOGGER
+# from ultralytics.utils import LOGGER
 from ultralytics.utils.metrics import batch_probiou
-
+from flabplatform.flabdet.utils.yolos import LOGGER
 
 class Profile(contextlib.ContextDecorator):
     """

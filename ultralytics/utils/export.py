@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 
-from ultralytics.utils import IS_JETSON, LOGGER
+from flabplatform.flabdet.utils.yolos import IS_JETSON, LOGGER
 
 
 def export_onnx(

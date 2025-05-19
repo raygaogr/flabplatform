@@ -13,7 +13,7 @@ from pathlib import Path
 import torch
 
 from ultralytics.engine.model import Model
-from ultralytics.utils import DEFAULT_CFG_DICT
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG_DICT
 from ultralytics.utils.downloads import attempt_download_asset
 from ultralytics.utils.torch_utils import model_info
 

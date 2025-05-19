@@ -5,7 +5,8 @@ import itertools
 from ultralytics.data import build_yolo_dataset
 from ultralytics.models import yolo
 from ultralytics.nn.tasks import WorldModel
-from ultralytics.utils import DEFAULT_CFG, RANK, checks
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, RANK
+from flabplatform.flabdet.utils.yolos import checks
 from ultralytics.utils.torch_utils import de_parallel
 
 

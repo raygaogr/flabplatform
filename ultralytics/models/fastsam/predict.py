@@ -4,7 +4,8 @@ import torch
 from PIL import Image
 
 from ultralytics.models.yolo.segment import SegmentationPredictor
-from ultralytics.utils import DEFAULT_CFG, checks
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
+from flabplatform.flabdet.utils.yolos import checks
 from ultralytics.utils.metrics import box_iou
 from ultralytics.utils.ops import scale_masks
 

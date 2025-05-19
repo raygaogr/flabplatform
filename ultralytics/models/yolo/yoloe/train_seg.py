@@ -5,7 +5,7 @@ from copy import copy, deepcopy
 
 from ultralytics.models.yolo.segment import SegmentationTrainer
 from ultralytics.nn.tasks import YOLOESegModel
-from ultralytics.utils import DEFAULT_CFG, RANK
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, RANK
 
 from .train import YOLOETrainer, YOLOETrainerFromScratch, YOLOEVPTrainer
 from .val import YOLOESegValidator

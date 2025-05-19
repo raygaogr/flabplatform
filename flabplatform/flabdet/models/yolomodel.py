@@ -68,7 +68,7 @@ from ultralytics.nn.modules import (
     v10Detect,
 )
 
-from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
+from flabplatform.flabdet.utils.yolos.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
     E2EDetectLoss,
     v8ClassificationLoss,
@@ -432,7 +432,7 @@ class DetectionModel(BaseModel):
         """Initialize the loss criterion for the DetectionModel."""
         return E2EDetectLoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
 
-
+@MODELS.register_module()
 class OBBModel(DetectionModel):
     """YOLO Oriented Bounding Box (OBB) model."""
 
@@ -452,7 +452,7 @@ class OBBModel(DetectionModel):
         """Initialize the loss criterion for the model."""
         return v8OBBLoss(self)
 
-
+@MODELS.register_module()
 class SegmentationModel(DetectionModel):
     """YOLO segmentation model."""
 
@@ -472,7 +472,7 @@ class SegmentationModel(DetectionModel):
         """Initialize the loss criterion for the SegmentationModel."""
         return v8SegmentationLoss(self)
 
-
+@MODELS.register_module()
 class PoseModel(DetectionModel):
     """YOLO pose model."""
 
@@ -498,7 +498,7 @@ class PoseModel(DetectionModel):
         """Initialize the loss criterion for the PoseModel."""
         return v8PoseLoss(self)
 
-
+@MODELS.register_module()
 class ClassificationModel(BaseModel):
     """YOLO classification model."""
 
@@ -684,6 +684,7 @@ class RTDETRDetectionModel(DetectionModel):
         return x
 
 
+@MODELS.register_module()
 class WorldModel(DetectionModel):
     """YOLOv8 World Model."""
 
@@ -788,6 +789,7 @@ class WorldModel(DetectionModel):
         return self.criterion(preds, batch)
 
 
+@MODELS.register_module()
 class YOLOEModel(DetectionModel):
     """YOLOE detection model."""
 
@@ -1011,6 +1013,7 @@ class YOLOEModel(DetectionModel):
         return self.criterion(preds, batch)
 
 
+@MODELS.register_module()
 class YOLOESegModel(YOLOEModel, SegmentationModel):
     """YOLOE segmentation model."""
 

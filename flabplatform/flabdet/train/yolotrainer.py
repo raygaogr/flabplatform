@@ -18,7 +18,7 @@ from ultralytics.data.utils import check_cls_dataset, check_det_dataset
 
 from ultralytics.utils import callbacks
 from ultralytics.utils.autobatch import check_train_batch_size
-from ultralytics.utils.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
+from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 from ultralytics.utils.dist import ddp_cleanup, generate_ddp_command
 from ultralytics.utils.files import get_latest_run
 from ultralytics.utils.plotting import plot_images, plot_labels, plot_results
@@ -543,6 +543,7 @@ class BaseTrainer:
                 "version": __version__,
                 "license": "AGPL-3.0 (https://ultralytics.com/license)",
                 "docs": "https://docs.ultralytics.com",
+                # "save_dir": self.args.save_dir,
             },
             buffer,
         )

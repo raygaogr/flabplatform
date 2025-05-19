@@ -69,8 +69,8 @@ from ultralytics.nn.modules import (
     YOLOESegment,
     v10Detect,
 )
-from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
-from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
+# from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
+from flabplatform.flabdet.utils.yolos.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
     E2EDetectLoss,
     v8ClassificationLoss,
@@ -91,6 +91,8 @@ from ultralytics.utils.torch_utils import (
     smart_inference_mode,
     time_sync,
 )
+
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 
 try:
     import thop

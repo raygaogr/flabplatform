@@ -142,7 +142,7 @@ class BaseDataset(Dataset):
         self.pad = pad
         if self.rect:
             assert self.batch_size is not None
-            self.set_rectangle()
+            self.set_rectangle() # TODO 输入尺寸动态变化
 
         # Buffer thread for mosaic images
         self.buffer = []  # buffer size = batch size
@@ -366,6 +366,7 @@ class BaseDataset(Dataset):
             return False
         return True
 
+    # tricks 设置最优宽高比
     def set_rectangle(self):
         """Set the shape of bounding boxes for YOLO detections as rectangles."""
         bi = np.floor(np.arange(self.ni) / self.batch_size).astype(int)  # batch index
@@ -630,11 +631,11 @@ class YOLODataset(BaseDataset):
         Returns:
             (Compose): Composed transforms.
         """
-        if self.augment:
+        if self.augment: # mosaic和mixup需要关掉rect模式
             hyp.mosaic = hyp.mosaic if self.augment and not self.rect else 0.0
             hyp.mixup = hyp.mixup if self.augment and not self.rect else 0.0
             transforms = v8_transforms(self, self.imgsz, hyp)
-        else:
+        else: # 验证阶段
             transforms = Compose([LetterBox(new_shape=(self.imgsz, self.imgsz), scaleup=False)])
         transforms.append(
             Format(

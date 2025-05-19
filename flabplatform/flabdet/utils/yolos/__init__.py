@@ -37,7 +37,7 @@ LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable
 ARGV = sys.argv or ["", ""]  # sometimes sys.argv = []
 FILE = Path(__file__).resolve()
 YOLO_ROOT = FILE.parents[2]  # YOLO
-ASSETS = YOLO_ROOT / "assets"
+ASSETS = YOLO_ROOT.parents[1] / "assets"
 YOLO_CFG_DIR = YOLO_ROOT / "configs/models/yolos"  # TODO
 YOLO_DEFAULT_CFG_PATH = YOLO_CFG_DIR / "default.yaml"
 
@@ -1027,14 +1027,15 @@ class SettingsManager(JSONDict):
         from ultralytics.utils.torch_utils import torch_distributed_zero_first
 
         root = GIT_DIR or Path()
-        datasets_root = (root.parent if GIT_DIR and is_dir_writeable(root.parent) else root).resolve()
+        # datasets_root = (root.parent if GIT_DIR and is_dir_writeable(root.parent) else root).resolve()
+        datasets_root = root.resolve()
 
         self.file = Path(file)
         self.version = version
         self.defaults = {
             "settings_version": version,  # Settings schema version
             "datasets_dir": str(datasets_root / "datasets"),  # Datasets directory
-            "weights_dir": str(root / "weights"),  # Model weights directory
+            "weights_dir": str(root / "models"),  # Model weights directory
             "runs_dir": str(root / "runs"),  # Experiment runs directory
             "uuid": hashlib.sha256(str(uuid.getnode()).encode()).hexdigest(),  # SHA-256 anonymized UUID hash
             "sync": True,  # Enable synchronization

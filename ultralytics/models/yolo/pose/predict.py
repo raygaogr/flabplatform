@@ -1,7 +1,8 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 from ultralytics.models.yolo.detect.predict import DetectionPredictor
-from ultralytics.utils import DEFAULT_CFG, LOGGER, ops
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOGGER
+from ultralytics.utils import ops
 
 
 class PosePredictor(DetectionPredictor):

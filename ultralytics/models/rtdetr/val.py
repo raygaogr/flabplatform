@@ -2,10 +2,12 @@
 
 import torch
 
-from ultralytics.data import YOLODataset
+# from ultralytics.data import YOLODataset
+from flabplatform.flabdet.datasets.yolos import YOLODataset
 from ultralytics.data.augment import Compose, Format, v8_transforms
 from ultralytics.models.yolo.detect import DetectionValidator
-from ultralytics.utils import colorstr, ops
+from flabplatform.flabdet.utils.yolos import colorstr
+from ultralytics.utils import ops
 
 __all__ = ("RTDETRValidator",)  # tuple or list
 

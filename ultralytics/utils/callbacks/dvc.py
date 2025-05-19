@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from ultralytics.utils import checks
+from flabplatform.flabdet.utils.yolos import checks
 from flabplatform.flabdet.utils.yolos import LOGGER, SETTINGS, TESTS_RUNNING
 
 try:

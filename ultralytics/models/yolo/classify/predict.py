@@ -6,7 +6,8 @@ from PIL import Image
 
 from ultralytics.engine.predictor import BasePredictor
 from ultralytics.engine.results import Results
-from ultralytics.utils import DEFAULT_CFG, ops
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
 
 
 class ClassificationPredictor(BasePredictor):

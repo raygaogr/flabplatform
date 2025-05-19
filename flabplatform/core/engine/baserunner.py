@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 from ultralytics.engine.results import Results
 from abc import ABCMeta, abstractmethod
+from flabplatform.core.config import Config
 
 class BaseRunner(nn.Module, metaclass=ABCMeta):
     """Base class for all runners.
@@ -43,6 +44,11 @@ class BaseRunner(nn.Module, metaclass=ABCMeta):
     @abstractmethod
     def export(self, format="onnx", **kwargs: Any) -> None:
         """Export the model."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_cfg(cls, cfg: Union[Dict, Config]):
         pass
 
 

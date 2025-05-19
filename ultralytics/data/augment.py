@@ -12,8 +12,8 @@ from PIL import Image
 from torch.nn import functional as F
 
 from ultralytics.data.utils import polygons2masks, polygons2masks_overlap
-from ultralytics.utils import LOGGER, colorstr
-from ultralytics.utils.checks import check_version
+from flabplatform.flabdet.utils.yolos import LOGGER, colorstr
+from flabplatform.flabdet.utils.yolos.checks import check_version
 from ultralytics.utils.instance import Instances
 from ultralytics.utils.metrics import bbox_ioa
 from ultralytics.utils.ops import segment2box, xywh2xyxy, xyxyxyxy2xywhr

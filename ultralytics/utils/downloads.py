@@ -11,7 +11,10 @@ from urllib import parse, request
 import requests
 import torch
 
-from ultralytics.utils import LOGGER, TQDM, checks, clean_url, emojis, url2file
+# from ultralytics.utils import LOGGER, TQDM, checks, clean_url, emojis, url2file
+
+from flabplatform.flabdet.utils.yolos import LOGGER, TQDM, clean_url, emojis, url2file
+from flabplatform.flabdet.utils.yolos import checks
 
 # Define Ultralytics GitHub assets maintained at https://github.com/ultralytics/assets
 GITHUB_ASSETS_REPO = "ultralytics/assets"

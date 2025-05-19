@@ -16,11 +16,12 @@ import numpy as np
 from PIL import Image, ImageOps
 
 from ultralytics.nn.autobackend import check_class_names
-from ultralytics.utils import (
+
+from flabplatform.flabdet.utils.yolos import (
     DATASETS_DIR,
     LOGGER,
     NUM_THREADS,
-    ROOT,
+    YOLO_ROOT,
     SETTINGS_FILE,
     TQDM,
     clean_url,
@@ -30,7 +31,7 @@ from ultralytics.utils import (
     yaml_load,
     yaml_save,
 )
-from ultralytics.utils.checks import check_file, check_font, is_ascii
+from flabplatform.flabdet.utils.yolos.checks import check_file, check_font, is_ascii
 from ultralytics.utils.downloads import download, safe_download, unzip_file
 from ultralytics.utils.ops import segments2boxes
 
@@ -424,7 +425,7 @@ def check_cls_dataset(dataset, split=""):
         LOGGER.warning(f"\nDataset not found ⚠️, missing path {data_dir}, attempting download...")
         t = time.time()
         if str(dataset) == "imagenet":
-            subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
+            subprocess.run(f"bash {YOLO_ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
         else:
             url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{dataset}.zip"
             download(url, dir=data_dir.parent)
@@ -582,7 +583,7 @@ class HUBDatasetStats:
                     "labels": [{Path(k).name: v} for k, v in dataset.imgs],
                 }
             else:
-                from ultralytics.data import YOLODataset
+                from flabplatform.flabdet.datasets.yolos import YOLODataset
 
                 dataset = YOLODataset(img_path=self.data[split], data=self.data, task=self.task)
                 x = np.array(
@@ -614,7 +615,8 @@ class HUBDatasetStats:
 
     def process_images(self):
         """Compress images for Ultralytics HUB."""
-        from ultralytics.data import YOLODataset  # ClassificationDataset
+        # from ultralytics.data import YOLODataset  # ClassificationDataset
+        from flabplatform.flabdet.datasets.yolos import YOLODataset
 
         self.im_dir.mkdir(parents=True, exist_ok=True)  # makes dataset-hub/images/
         for split in "train", "val", "test":
@@ -693,6 +695,7 @@ def autosplit(path=DATASETS_DIR / "coco8/images", weights=(0.9, 0.1, 0.0), annot
                 f.write(f"./{img.relative_to(path.parent).as_posix()}" + "\n")  # add image to txt file
 
 
+# 理解这块的优化加速技巧 TODO
 def load_dataset_cache_file(path):
     """Load an Ultralytics *.cache dictionary from path."""
     import gc

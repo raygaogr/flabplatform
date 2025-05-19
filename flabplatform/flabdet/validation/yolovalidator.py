@@ -9,7 +9,7 @@ from ultralytics.data import build_dataloader, build_yolo_dataset, converter
 from ultralytics.data.utils import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import AutoBackend
 
-from ultralytics.utils.checks import check_imgsz, check_requirements
+from flabplatform.flabdet.utils.yolos.checks import check_imgsz, check_requirements
 from ultralytics.utils.ops import Profile
 from ultralytics.utils.torch_utils import de_parallel, select_device, smart_inference_mode
 from ultralytics.utils.metrics import ConfusionMatrix, DetMetrics, box_iou

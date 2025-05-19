@@ -12,7 +12,7 @@ from ultralytics.data import load_inference_source
 from ultralytics.data.augment import LetterBox, classify_transforms
 from ultralytics.nn.autobackend import AutoBackend
 from ultralytics.utils import  callbacks, ops
-from ultralytics.utils.checks import check_imgsz, check_imshow
+from flabplatform.flabdet.utils.yolos.checks import check_imgsz, check_imshow
 from ultralytics.utils.files import increment_path
 from ultralytics.utils.torch_utils import select_device, smart_inference_mode
 

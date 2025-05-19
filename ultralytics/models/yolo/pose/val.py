@@ -6,8 +6,9 @@ import numpy as np
 import torch
 
 from ultralytics.models.yolo.detect import DetectionValidator
-from ultralytics.utils import LOGGER, ops
-from ultralytics.utils.checks import check_requirements
+from flabplatform.flabdet.utils.yolos import LOGGER
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos.checks import check_requirements
 from ultralytics.utils.metrics import OKS_SIGMA, PoseMetrics, box_iou, kpt_iou
 from ultralytics.utils.plotting import output_to_target, plot_images
 

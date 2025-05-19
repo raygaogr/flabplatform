@@ -7,7 +7,8 @@ from typing import Any, List, Optional
 import cv2
 import numpy as np
 
-from ultralytics.utils import LOGGER, RANK, SETTINGS, TESTS_RUNNING, ops
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos import LOGGER, RANK, SETTINGS, TESTS_RUNNING
 from ultralytics.utils.metrics import ClassifyMetrics, DetMetrics, OBBMetrics, PoseMetrics, SegmentMetrics
 
 try:

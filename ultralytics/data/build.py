@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from torch.utils.data import dataloader, distributed
 
-from ultralytics.data.dataset import GroundingDataset, YOLODataset, YOLOMultiModalDataset
+from flabplatform.flabdet.datasets.yolos import GroundingDataset, YOLODataset, YOLOMultiModalDataset
 from ultralytics.data.loaders import (
     LOADERS,
     LoadImagesAndVideos,
@@ -21,8 +21,8 @@ from ultralytics.data.loaders import (
     autocast_list,
 )
 from ultralytics.data.utils import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
-from ultralytics.utils import RANK, colorstr
-from ultralytics.utils.checks import check_file
+from flabplatform.flabdet.utils.yolos import RANK, colorstr
+from flabplatform.flabdet.utils.yolos.checks import check_file
 
 
 class InfiniteDataLoader(dataloader.DataLoader):

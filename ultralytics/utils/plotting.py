@@ -12,10 +12,10 @@ import torch
 from PIL import Image, ImageDraw, ImageFont
 from PIL import __version__ as pil_version
 
-from ultralytics.utils import LOGGER, TryExcept, ops, plt_settings, threaded
-from ultralytics.utils.checks import check_font, check_version, is_ascii
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos.checks import check_font, check_version, is_ascii
 from ultralytics.utils.files import increment_path
-
+from flabplatform.flabdet.utils.yolos import LOGGER, TryExcept, plt_settings, threaded
 
 class Colors:
     """

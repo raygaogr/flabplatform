@@ -2,9 +2,10 @@
 
 import torch
 
-from ultralytics.data import ClassificationDataset, build_dataloader
+from ultralytics.data import build_dataloader
+from flabplatform.flabdet.datasets.yolos import ClassificationDataset
 from ultralytics.engine.validator import BaseValidator
-from ultralytics.utils import LOGGER
+from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils.metrics import ClassifyMetrics, ConfusionMatrix
 from ultralytics.utils.plotting import plot_images
 

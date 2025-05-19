@@ -14,10 +14,17 @@ import torch
 import torch.nn as nn
 from PIL import Image
 
-from ultralytics.utils import ARM64, IS_JETSON, LINUX, LOGGER, PYTHON_VERSION, ROOT, yaml_load
-from ultralytics.utils.checks import check_requirements, check_suffix, check_version, check_yaml
+# from ultralytics.utils import ARM64, IS_JETSON, LINUX, LOGGER, PYTHON_VERSION, ROOT, yaml_load
+from flabplatform.flabdet.utils.yolos.checks import check_requirements, check_suffix, check_version, check_yaml
 from ultralytics.utils.downloads import attempt_download_asset, is_url
 
+from flabplatform.flabdet.utils.yolos import (ARM64,
+                                              LINUX,
+                                              IS_JETSON,
+                                              LOGGER,
+                                              PYTHON_VERSION,
+                                              YOLO_ROOT,
+                                              yaml_load)
 
 def check_class_names(names):
     """Check class names and convert to dict format if needed."""
@@ -33,7 +40,7 @@ def check_class_names(names):
                 f"{min(names.keys())}-{max(names.keys())} defined in your dataset YAML."
             )
         if isinstance(names[0], str) and names[0].startswith("n0"):  # imagenet class codes, i.e. 'n01440764'
-            names_map = yaml_load(ROOT / "cfg/datasets/ImageNet.yaml")["map"]  # human-readable names
+            names_map = yaml_load(YOLO_ROOT / "cfg/datasets/ImageNet.yaml")["map"]  # human-readable names
             names = {k: names_map[v] for k, v in names.items()}
     return names
 

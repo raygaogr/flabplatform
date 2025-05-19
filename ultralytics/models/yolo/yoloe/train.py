@@ -6,13 +6,14 @@ from pathlib import Path
 
 import torch
 
-from ultralytics.data import YOLOConcatDataset, build_grounding, build_yolo_dataset
+from ultralytics.data import build_grounding, build_yolo_dataset
 from ultralytics.data.augment import LoadVisualPrompt
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.models.yolo.detect import DetectionTrainer, DetectionValidator
 from ultralytics.nn.tasks import YOLOEModel
-from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOGGER, RANK
 from ultralytics.utils.torch_utils import de_parallel
+from flabplatform.flabdet.datasets.yolos import YOLOConcatDataset
 
 from .val import YOLOEDetectValidator
 

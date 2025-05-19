@@ -4,7 +4,8 @@ import torch
 
 from ultralytics.engine.results import Results
 from ultralytics.models.yolo.detect.predict import DetectionPredictor
-from ultralytics.utils import DEFAULT_CFG, ops
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
+from ultralytics.utils import ops
 
 
 class OBBPredictor(DetectionPredictor):

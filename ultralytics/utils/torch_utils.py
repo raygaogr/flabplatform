@@ -17,7 +17,8 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ultralytics.utils import (
+from flabplatform.flabdet.utils.yolos.checks import check_version
+from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG_DICT,
     DEFAULT_CFG_KEYS,
     LOGGER,
@@ -25,10 +26,8 @@ from ultralytics.utils import (
     PYTHON_VERSION,
     TORCHVISION_VERSION,
     WINDOWS,
-    __version__,
     colorstr,
 )
-from ultralytics.utils.checks import check_version
 
 try:
     import thop
@@ -164,7 +163,7 @@ def select_device(device="", batch=0, newline=False, verbose=True):
     if isinstance(device, torch.device) or str(device).startswith("tpu"):
         return device
 
-    s = f"Ultralytics {__version__} 🚀 Python-{PYTHON_VERSION} torch-{torch.__version__} "
+    s = f"🚀 Python-{PYTHON_VERSION} torch-{torch.__version__} "
     device = str(device).lower()
     for remove in "cuda:", "none", "(", ")", "[", "]", "'", " ":
         device = device.replace(remove, "")  # to string, 'cuda:0' -> '0' and '(0, 1)' -> '0,1'
@@ -713,9 +712,8 @@ def strip_optimizer(f: Union[str, Path] = "best.pt", s: str = "", updates: dict 
 
     metadata = {
         "date": datetime.now().isoformat(),
-        "version": __version__,
-        "license": "AGPL-3.0 License (https://ultralytics.com/license)",
-        "docs": "https://docs.ultralytics.com",
+        "license": "AGPL-3.0 License",
+        "docs": "",
     }
 
     # Update model

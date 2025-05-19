@@ -2,8 +2,8 @@
 
 from ultralytics.engine.results import Results
 from ultralytics.models.yolo.detect.predict import DetectionPredictor
-from ultralytics.utils import DEFAULT_CFG, ops
-
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
 
 class SegmentationPredictor(DetectionPredictor):
     """

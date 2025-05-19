@@ -72,12 +72,13 @@ import torch
 
 from ultralytics.cfg import TASK2DATA, get_cfg
 from ultralytics.data import build_dataloader
-from ultralytics.data.dataset import YOLODataset
+# from ultralytics.data.dataset import YOLODataset
+from flabplatform.flabdet.datasets.yolos import YOLODataset
 from ultralytics.data.utils import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Classify, Detect, RTDETRDecoder
 from ultralytics.nn.tasks import ClassificationModel, DetectionModel, SegmentationModel, WorldModel
-from ultralytics.utils import (
+from flabplatform.flabdet.utils.yolos import (
     ARM64,
     DEFAULT_CFG,
     IS_JETSON,
@@ -85,15 +86,14 @@ from ultralytics.utils import (
     LOGGER,
     MACOS,
     MACOS_VERSION,
-    ROOT,
+    YOLO_ROOT,
     WINDOWS,
-    __version__,
-    callbacks,
     colorstr,
     get_default_args,
     yaml_save,
 )
-from ultralytics.utils.checks import (
+from ultralytics.utils import callbacks
+from flabplatform.flabdet.utils.yolos.checks import (
     check_imgsz,
     check_is_path_safe,
     check_requirements,
@@ -425,9 +425,8 @@ class Exporter:
             "description": description,
             "author": "Ultralytics",
             "date": datetime.now().isoformat(),
-            "version": __version__,
-            "license": "AGPL-3.0 License (https://ultralytics.com/license)",
-            "docs": "https://docs.ultralytics.com",
+            "license": "",
+            "docs": "",
             "stride": int(max(model.stride)),
             "task": model.task,
             "batch": self.args.batch,
@@ -736,12 +735,12 @@ class Exporter:
         f_ts = self.file.with_suffix(".torchscript")
 
         name = Path("pnnx.exe" if WINDOWS else "pnnx")  # PNNX filename
-        pnnx = name if name.is_file() else (ROOT / name)
+        pnnx = name if name.is_file() else (YOLO_ROOT / name)
         if not pnnx.is_file():
             LOGGER.warning(
                 f"{prefix} WARNING ⚠️ PNNX not found. Attempting to download binary file from "
                 "https://github.com/pnnx/pnnx/.\nNote PNNX Binary file must be placed in current working directory "
-                f"or in {ROOT}. See PNNX repo for full installation instructions."
+                f"or in {YOLO_ROOT}. See PNNX repo for full installation instructions."
             )
             system = "macos" if MACOS else "windows" if WINDOWS else "linux-aarch64" if ARM64 else "linux"
             try:

@@ -16,8 +16,9 @@ import torch
 from PIL import Image
 
 from ultralytics.data.utils import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
-from ultralytics.utils import LOGGER, ops
-from ultralytics.utils.checks import check_requirements
+from flabplatform.flabdet.utils.yolos import LOGGER
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos.checks import check_requirements
 from ultralytics.utils.patches import imread
 
 

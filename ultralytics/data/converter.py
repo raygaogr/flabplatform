@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from ultralytics.utils import DATASETS_DIR, LOGGER, NUM_THREADS, TQDM
+from flabplatform.flabdet.utils.yolos import DATASETS_DIR, LOGGER, NUM_THREADS, TQDM
 from ultralytics.utils.downloads import download
 from ultralytics.utils.files import increment_path
 
@@ -606,7 +606,8 @@ def yolo_bbox2segment(im_dir, save_dir=None, sam_model="sam_b.pt", device=None):
                 └─ NNN.txt
     """
     from ultralytics import SAM
-    from ultralytics.data import YOLODataset
+    # from ultralytics.data import YOLODataset
+    from flabplatform.flabdet.datasets.yolos import YOLODataset
     from ultralytics.utils.ops import xywh2xyxy
 
     # NOTE: add placeholder to pass class index check

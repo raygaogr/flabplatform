@@ -10,19 +10,21 @@ from PIL import Image
 
 from ultralytics.cfg import TASK2DATA, get_cfg, get_save_dir
 from ultralytics.engine.results import Results
-from ultralytics.nn.tasks import attempt_load_one_weight, guess_model_task, yaml_model_load
+# from ultralytics.nn.tasks import attempt_load_one_weight, guess_model_task, yaml_model_load
 from ultralytics.utils import (
+    callbacks
+)
+from flabplatform.flabdet.utils.yolos import checks
+from flabplatform.flabdet.utils.yolos import (
     ARGV,
     ASSETS,
     DEFAULT_CFG_DICT,
     LOGGER,
     RANK,
-    callbacks,
-    checks,
     emojis,
     yaml_load,
 )
-
+from flabplatform.flabdet.models.yolomodel import attempt_load_one_weight, guess_model_task, yaml_model_load
 
 class Model(torch.nn.Module):
     """

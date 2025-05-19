@@ -5,16 +5,16 @@ from copy import deepcopy
 import torch
 from torch.nn import functional as F
 
-from ultralytics.data import YOLOConcatDataset, build_dataloader, build_yolo_dataset
+from ultralytics.data import build_dataloader, build_yolo_dataset
 from ultralytics.data.augment import LoadVisualPrompt
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.models.yolo.model import YOLOEModel
 from ultralytics.models.yolo.segment import SegmentationValidator
 from ultralytics.nn.modules.head import YOLOEDetect
-from ultralytics.utils import LOGGER, TQDM
+from flabplatform.flabdet.utils.yolos import LOGGER, TQDM
 from ultralytics.utils.torch_utils import select_device, smart_inference_mode
-
+from flabplatform.flabdet.datasets.yolos import YOLOConcatDataset
 
 class YOLOEDetectValidator(DetectionValidator):
     """

@@ -17,7 +17,8 @@ import torch.nn.functional as F
 from ultralytics.data.augment import LetterBox
 from ultralytics.engine.predictor import BasePredictor
 from ultralytics.engine.results import Results
-from ultralytics.utils import DEFAULT_CFG, ops
+from ultralytics.utils import ops
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
 from ultralytics.utils.torch_utils import select_device, smart_inference_mode
 
 from .amg import (
