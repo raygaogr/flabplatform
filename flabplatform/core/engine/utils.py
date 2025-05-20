@@ -71,8 +71,6 @@ def create_runner(args):
     cfg = Config.fromfile(args.config)
     filename = osp.basename(args.config)
 
-    # SETTINGS.update(dict(datasets_dir=r"D:\Workspace_gr\pyProjects\flabplatform\datasets"))
-
     if filename.startswith('yolo'):
         settings = SettingsManager()
         settings.update(dict(datasets_dir=r"D:\Workspace_gr\pyProjects\flabplatform\datasets"))

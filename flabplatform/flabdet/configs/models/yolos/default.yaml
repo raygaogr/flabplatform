@@ -6,13 +6,13 @@ model: # (str, optional) path to model file, i.e. yolov8n.pt, yolov8n.yaml
 data: # (str, optional) path to data file, i.e. coco8.yaml
 epochs: 100 # (int) number of epochs to train for
 time: # (float, optional) number of hours to train for, overrides epochs if supplied
-patience: 100 # (int) epochs to wait for no observable improvement for early stopping of training
+patience: 20 # (int) epochs to wait for no observable improvement for early stopping of training
 batch: 16 # (int) number of images per batch (-1 for AutoBatch)
 imgsz: 640 # (int | list) input images size as int for train and val modes, or list[h,w] for predict and export modes
 save: True # (bool) save train checkpoints and predict results
-save_period: -1 # (int) Save checkpoint every x epochs (disabled if < 1)
+save_period: 5 # (int) Save checkpoint every x epochs (disabled if < 1)
 cache: disk # (bool) True/ram, disk or False. Use cache for data loading
-device: # (int | str | list, optional) device to run on, i.e. cuda device=0 or device=0,1,2,3 or device=cpu
+device: 0 # (int | str | list, optional) device to run on, i.e. cuda device=0 or device=0,1,2,3 or device=cpu
 workers: 8 # (int) number of worker threads for data loading (per RANK if DDP)
 project: # (str, optional) project name
 name: # (str, optional) experiment name, results saved to 'project/name' directory
@@ -25,7 +25,7 @@ deterministic: True # (bool) whether to enable deterministic mode
 single_cls: False # (bool) train multi-class data as single-class
 rect: False # (bool) rectangular training if mode='train' or rectangular validation if mode='val'
 cos_lr: False # (bool) use cosine learning rate scheduler
-close_mosaic: 10 # (int) disable mosaic augmentation for final epochs (0 to disable)
+close_mosaic: 30 # (int) disable mosaic augmentation for final epochs (0 to disable)
 resume: False # (bool) resume training from last checkpoint
 amp: True # (bool) Automatic Mixed Precision (AMP) training, choices=[True, False], True runs AMP check
 fraction: 1.0 # (float) dataset fraction to train on (default is 1.0, all images in train set)
@@ -44,8 +44,8 @@ num_classes: 80 # (int) number of classes for custom model, i.e. 80 for COCO, 1 
 val: True # (bool) validate/test during training
 split: val # (str) dataset split to use for validation, i.e. 'val', 'test' or 'train'
 save_json: False # (bool) save results to JSON file
-conf: # (float, optional) object confidence threshold for detection (default 0.25 predict, 0.001 val)
-iou: 0.7 # (float) intersection over union (IoU) threshold for NMS
+conf: 0.3 # (float, optional) object confidence threshold for detection (default 0.25 predict, 0.001 val)
+iou: 0.5 # (float) intersection over union (IoU) threshold for NMS
 max_det: 300 # (int) maximum number of detections per image
 half: False # (bool) use half precision (FP16)
 dnn: False # (bool) use OpenCV DNN for ONNX inference
@@ -74,13 +74,13 @@ show_boxes: True # (bool) show prediction boxes
 line_width: # (int, optional) line width of the bounding boxes. Scaled to image size if None.
 
 # Export settings ------------------------------------------------------------------------------------------------------
-format: torchscript # (str) format to export to, choices at https://docs.ultralytics.com/modes/export/#export-formats
+format: onnx # (str) format to export to, choices at https://docs.ultralytics.com/modes/export/#export-formats
 keras: False # (bool) use Kera=s
 optimize: False # (bool) TorchScript: optimize for mobile
 int8: False # (bool) CoreML/TF INT8 quantization
 dynamic: False # (bool) ONNX/TF/TensorRT: dynamic axes
 simplify: True # (bool) ONNX: simplify model using `onnxslim`
-opset: # (int, optional) ONNX: opset version
+opset: 11 # (int, optional) ONNX: opset version
 workspace: None # (float, optional) TensorRT: workspace size (GiB), `None` will let TensorRT auto-allocate memory
 nms: False # (bool) CoreML: add NMS
 
@@ -114,7 +114,7 @@ mixup: 0.0 # (float) image mixup (probability)
 copy_paste: 0.0 # (float) segment copy-paste (probability)
 copy_paste_mode: "flip" # (str) the method to do copy_paste augmentation (flip, mixup)
 auto_augment: randaugment # (str) auto augmentation policy for classification (randaugment, autoaugment, augmix)
-erasing: 0.4 # (float) probability of random erasing during classification training (0-0.9), 0 means no erasing, must be less than 1.0.
+erasing: 0.0 # (float) probability of random erasing during classification training (0-0.9), 0 means no erasing, must be less than 1.0.
 
 # Custom config.yaml ---------------------------------------------------------------------------------------------------
 cfg: # (str, optional) for overriding defaults.yaml
