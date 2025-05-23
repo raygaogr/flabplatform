@@ -20,7 +20,7 @@ from ultralytics.data.loaders import (
     SourceTypes,
     autocast_list,
 )
-from ultralytics.data.utils import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
+from flabplatform.flabdet.datasets.utils  import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
 from flabplatform.flabdet.utils.yolos import RANK, colorstr
 from flabplatform.flabdet.utils.yolos.checks import check_file
 
@@ -217,7 +217,7 @@ def check_source(source):
     elif isinstance(source, torch.Tensor):
         tensor = True
     else:
-        raise TypeError("Unsupported image type. For supported types see https://docs.ultralytics.com/modes/predict")
+        raise TypeError("Unsupported image type.")
 
     return source, webcam, screenshot, from_img, in_memory, tensor
 

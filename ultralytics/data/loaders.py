@@ -15,7 +15,7 @@ import requests
 import torch
 from PIL import Image
 
-from ultralytics.data.utils import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
+from flabplatform.flabdet.datasets.utils  import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
 from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils import ops
 from flabplatform.flabdet.utils.yolos.checks import check_requirements
@@ -597,7 +597,6 @@ def autocast_list(source):
         else:
             raise TypeError(
                 f"type {type(im).__name__} is not a supported Ultralytics prediction source type. \n"
-                f"See https://docs.ultralytics.com/modes/predict for supported source types."
             )
 
     return files

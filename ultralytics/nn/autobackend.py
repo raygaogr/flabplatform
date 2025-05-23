@@ -528,7 +528,6 @@ class AutoBackend(nn.Module):
 
             raise TypeError(
                 f"model='{w}' is not a supported model format. Ultralytics supports: {export_formats()['Format']}\n"
-                f"See https://docs.ultralytics.com/modes/predict for help."
             )
 
         # Load external metadata YAML

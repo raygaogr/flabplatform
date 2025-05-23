@@ -1,0 +1,46 @@
+
+
+{
+  "operation": "training, eval",
+  "task": "detect",
+  "commonParams": {
+    "datasets": {
+      "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
+      "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
+    },
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train3",
+    "mqTopic": "",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train3/models",
+    "baseModelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2/models"
+  },
+  "training": {
+    "algoParams": {
+      "model": {
+        "type": "yolov8n",
+        "num_classes": 80
+      },
+      "device": 0, 
+      "batch": 16, 
+      "workers": 8, 
+      "imgsz": 640, 
+      "seed": 0,
+      "epochs": 2,
+      "patience": 2,
+      "save_period": 1,
+      "amp": true,
+      "optimizer": {
+        "type": "auto", 
+        "weight_decay": 0.0005,
+        "lr0": 0.01,
+        "momentum": 0.937
+      }
+    }
+  },
+  "eval": {
+    "algoParams": {
+      "conf": 0.2,
+      "iou": 0.5, 
+      "max_det": 300 
+    }
+  }
+}

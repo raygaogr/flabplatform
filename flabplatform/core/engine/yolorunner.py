@@ -27,7 +27,7 @@ from flabplatform.core.config import Config
 from flabplatform.flabdet.models import attempt_load_one_weight, guess_model_task, yaml_model_load
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
 from .baserunner import BaseRunner
-
+import os
 
 class YOLORunner(BaseRunner):
     """
@@ -122,15 +122,17 @@ class YOLORunner(BaseRunner):
         self.metrics = None  # validation/training metrics
 
         self.overrides = overrides
-        self.task = overrides["task"]  # task type
+        self.task = overrides.get("task", None)  # task type
 
         model = str(self.overrides["model"]).strip()
         if not Path(model).suffix:
             model = model + ".yaml"
         __import__("os").environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # to avoid deterministic warnings
-        if Path(model).suffix in {".yaml", ".yml"}:
+        if Path(model).suffix in {".yaml", ".yml"} and not self.overrides["baseModelDir"]:
             self._new(model, task=self.task, verbose=verbose)
         else:
+            if not model.endswith("pt"):
+                model = os.path.join(self.overrides["baseModelDir"], "best.pt")
             self._load(model, task=self.task)
 
         # Delete super().training for accessing self.model.training
@@ -227,10 +229,10 @@ class YOLORunner(BaseRunner):
             self.model, self.ckpt = attempt_load_one_weight(weights)
             self.task = self.model.args["task"]
             self.model.args = self._reset_ckpt_args(self.model.args)
-            if self.overrides["resume"]:
-                self.overrides = self.model.args = {**self.overrides, **self.model.args}
-            else:
-                self.model.args = self.overrides
+            # if self.overrides["resume"]:
+            #     self.overrides = self.model.args = {**self.overrides, **self.model.args}
+            # else:
+            self.model.args = self.overrides
             self.ckpt_path = self.model.pt_path
         else:
             weights = checks.check_file(weights)  # runs in all cases, not redundant with above call
@@ -347,8 +349,8 @@ class YOLORunner(BaseRunner):
             "model": deepcopy(self.model).half() if isinstance(self.model, torch.nn.Module) else self.model,
             "date": datetime.now().isoformat(),
             "version": __version__,
-            "license": "AGPL-3.0 License (https://ultralytics.com/license)",
-            "docs": "https://docs.ultralytics.com",
+            "license": "",
+            "docs": "",
         }
         torch.save({**self.ckpt, **updates}, filename)
 
@@ -1122,23 +1124,44 @@ class YOLORunnerWarpper(YOLORunner):
     def from_cfg(cls, cfg: Config):
         cfg_dict = cfg.to_dict()
         special_keys = ["model", "optimizer"]
+        ignore_keys = ["mqTopic", "rootDir", "type"] #TODO
 
         def parse_dict(input_dict: dict, output_dict: dict) -> dict:
             for k, v in input_dict.items():
-                if k == "data":
-                    if input_dict[k].get("type") == "custom":
-                        input_dict[k].pop("type")
-                        output_dict[k] = input_dict[k]
-                    elif input_dict[k].get("type").endswith(".yaml"):
-                        output_dict[k] = input_dict[k]["type"]
-                    else:
-                        output_dict[k] = input_dict[k]["type"] + ".yaml"
+                if k in ignore_keys:
+                    continue
+                elif k == "outputDir":
+                    output_dict["save_dir"] = v
+                elif k == "operation":
+                    if "training" in v:
+                        output_dict["mode"] = "train"
+                    elif "eval" in v or "val" in v:
+                        output_dict["mode"] = "val"
+                    elif "predict" in v or "test" in v:
+                        output_dict["mode"] = "predict"
+                elif k == "metafile":
+                    data_cfg = Config.fromfile(v)
+                    output_dict["data"] = dict()
+                    output_dict["data"]["names"] = data_cfg["names"]
+                    output_dict["data"]["nc"] = cfg_dict["training"]["algoParams"]["model"]["num_classes"]
+                    output_dict["data"]["path"] = cfg_dict["commonParams"]["datasets"]["rootDir"]
+                    output_dict["data"]["train"] = list()
+                    output_dict["data"]["val"] = list()
+                    output_dict["data"]["test"] = list()
+                    valid_purpose = ["train", "eval", "test"]
+                    for dataset in data_cfg["datasets"]:
+                        dataset_purpose = dataset["purpose"]
+                        if dataset_purpose in valid_purpose:
+                            if dataset["purpose"] == "eval":
+                                dataset_purpose = "val"
+                            if len(dataset["samples"]) == 0:
+                                output_dict["data"][dataset_purpose].append(dataset["sourceRoot"])
+                            else:
+                                for sample in dataset["samples"]:
+                                    output_dict["data"][dataset_purpose].append(os.path.join(dataset["sourceRoot"], sample["image"]))
                 elif k in special_keys:
                     output_dict[k] = v["type"]
-                    if isinstance(v, dict):
-                        parse_dict(v, output_dict)
-                elif k == "type":
-                    continue
+                    parse_dict(v, output_dict)
                 else:
                     if isinstance(v, dict):
                         parse_dict(v, output_dict)

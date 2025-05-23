@@ -48,7 +48,7 @@ class BaseRunner(nn.Module, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def from_cfg(cls, cfg: Union[Dict, Config]):
+    def from_cfg(cls, cfg: Union[Dict, Config], **kwargs: Any):
         pass
 
 

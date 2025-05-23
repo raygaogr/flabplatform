@@ -64,15 +64,13 @@ class MMFormatter(logging.Formatter):
         debug_prefix = self._get_prefix('DEBUG', color, blink)
 
         # Config output format.
-        self.err_format = (f'%(asctime)s - {error_prefix} - '
-                           '%(pathname)s - %(funcName)s - %(lineno)d - '
+        self.err_format = (f'%(asctime)s-{error_prefix}-'
+                           '%(pathname)s-%(funcName)s-%(lineno)d-'
                            '%(message)s')
-        self.warn_format = (f'%(asctime)s - {warn_prefix} - %('
-                            'message)s')
-        self.info_format = (f'%(asctime)s - {info_prefix} - %('
-                            'message)s')
-        self.debug_format = (f'%(asctime)s - {debug_prefix} - %('
-                             'message)s')
+        self.warn_format = (f'%(asctime)s-{warn_prefix}-%(message)s')
+        # self.info_format = (f'%(asctime)s-{info_prefix}-%(message)s')
+        self.info_format = (f'%(message)s')
+        self.debug_format = (f'%(asctime)s-{debug_prefix}-%(message)s')
 
     def _get_prefix(self, level: str, color: bool, blink=False) -> str:
         """Get the prefix of the target log level.
@@ -198,7 +196,6 @@ class MMLogger(Logger, ManagerMixin):
         if isinstance(log_level, str):
             log_level = logging._nameToLevel[log_level]
         global_rank = _get_rank()
-        # device_id = _get_device_id()
 
         # Config stream_handler. If `rank != 0`. stream_handler can only
         # export ERROR logs.
@@ -214,52 +211,6 @@ class MMLogger(Logger, ManagerMixin):
             stream_handler.setLevel(logging.ERROR)
         stream_handler.addFilter(FilterDuplicateWarning(logger_name))
         self.handlers.append(stream_handler)
-
-        # if log_file is not None:
-        #     world_size = _get_world_size()
-        #     is_distributed = (log_level <= logging.DEBUG
-        #                       or distributed) and world_size > 1
-        #     if is_distributed:
-        #         filename, suffix = osp.splitext(osp.basename(log_file))
-        #         hostname = _get_host_info()
-        #         if hostname:
-        #             filename = (f'{filename}_{hostname}_device{device_id}_'
-        #                         f'rank{global_rank}{suffix}')
-        #         else:
-        #             # Omit hostname if it is empty
-        #             filename = (f'{filename}_device{device_id}_'
-        #                         f'rank{global_rank}{suffix}')
-        #         log_file = osp.join(osp.dirname(log_file), filename)
-        #     # Save multi-ranks logs if distributed is True. The logs of rank0
-        #     # will always be saved.
-        #     if global_rank == 0 or is_distributed:
-        #         if file_handler_cfg is not None:
-        #             assert 'type' in file_handler_cfg
-        #             file_handler_type = file_handler_cfg.pop('type')
-        #             file_handlers_map = _get_logging_file_handlers()
-        #             if file_handler_type in file_handlers_map:
-        #                 file_handler_cls = file_handlers_map[file_handler_type]
-        #                 file_handler_cfg.setdefault('filename', log_file)
-        #                 file_handler = file_handler_cls(**file_handler_cfg)
-        #             else:
-        #                 raise ValueError('`logging.handlers` does not '
-        #                                  f'contain {file_handler_type}')
-        #         else:
-        #             # Here, the default behavior of the official
-        #             # logger is 'a'. Thus, we provide an interface to
-        #             # change the file mode to the default behavior.
-        #             # `FileHandler` is not supported to have colors,
-        #             # otherwise it will appear garbled.
-        #             file_handler = logging.FileHandler(log_file, file_mode)
-
-        #         # `StreamHandler` record year, month, day hour, minute,
-        #         # and second timestamp. file_handler will only record logs
-        #         # without color to avoid garbled code saved in files.
-        #         file_handler.setFormatter(
-        #             MMFormatter(color=False, datefmt='%Y/%m/%d %H:%M:%S'))
-        #         file_handler.setLevel(log_level)
-        #         file_handler.addFilter(FilterDuplicateWarning(logger_name))
-        #         self.handlers.append(file_handler)
         self._log_file = log_file
 
     @property

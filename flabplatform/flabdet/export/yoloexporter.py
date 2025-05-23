@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 from ultralytics.data import build_dataloader
-from ultralytics.data.utils import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.utils import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Classify, Detect, RTDETRDecoder
 from flabplatform.flabdet.utils.yolos.checks import (
@@ -283,7 +283,6 @@ class Exporter:
                 "WARNING ⚠️ YOLOWorld (original version) export is not supported to any format.\n"
                 "WARNING ⚠️ YOLOWorldv2 models (i.e. 'yolov8s-worldv2.pt') only support export to "
                 "(torchscript, onnx, openvino, engine, coreml) formats. "
-                "See https://docs.ultralytics.com/models/yolo-world for details."
             )
             model.clip_model = None  # openvino int8 export error: https://github.com/ultralytics/ultralytics/pull/18445
 
@@ -365,8 +364,8 @@ class Exporter:
             "author": "Ultralytics",
             "date": datetime.now().isoformat(),
             "version": __version__,
-            "license": "AGPL-3.0 License (https://ultralytics.com/license)",
-            "docs": "https://docs.ultralytics.com",
+            "license": "",
+            "docs": "",
             "stride": int(max(model.stride)),
             "task": model.task,
             "batch": self.args.batch,

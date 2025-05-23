@@ -482,7 +482,6 @@ def handle_yolo_settings(args: List[str]) -> None:
         - The function will check for alignment between the provided settings and the existing ones.
         - After processing, the updated settings will be displayed.
         - For more information on handling YOLO settings, visit:
-          https://docs.ultralytics.com/quickstart/#ultralytics-settings
     """
     url = "https://docs.ultralytics.com/quickstart/#ultralytics-settings"  # help URL
     try:

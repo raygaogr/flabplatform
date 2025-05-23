@@ -2,11 +2,11 @@
 
 import requests
 
-from ultralytics.data.utils import HUBDatasetStats
+from flabplatform.flabdet.datasets.utils  import HUBDatasetStats
 from ultralytics.hub.auth import Auth
 from ultralytics.hub.session import HUBTrainingSession
 from ultralytics.hub.utils import HUB_API_ROOT, HUB_WEB_ROOT, PREFIX, events
-from ultralytics.utils import LOGGER, SETTINGS, checks
+from flabplatform.flabdet.utils.yolos import LOGGER, SETTINGS, checks
 
 __all__ = (
     "PREFIX",

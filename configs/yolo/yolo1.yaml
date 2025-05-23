@@ -1,0 +1,40 @@
+operation: training, eval
+commonParams:
+  datasets:
+    rootDir: D:/Workspace_gr/pyProjects/flabplatform/datasets
+    metadata: metadata.json
+    data:
+      train:
+        - coco8/images/train
+      val:
+        - coco8/images/val
+  outputDir: D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2
+  mqTopic: ""
+  modelDir: weights
+
+training:
+  algoParams:
+    model:
+      type: yolov8n
+      num_classes: 80
+    device: 0
+    batch: 16
+    workers: 8
+    imgsz: 640
+    seed: 0
+    epochs: 100
+    patience: 20
+    save_period: 5
+    resume: false
+    amp: true
+    optimizer:
+      type: auto
+      weight_decay: 0.0005
+      lr0: 0.01
+      momentum: 0.937
+
+eval:
+  algoParams:
+    conf: 0.2
+    iou: 0.5
+    max_det: 300

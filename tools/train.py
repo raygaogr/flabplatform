@@ -3,9 +3,9 @@ import os.path as osp
 import sys
 sys.path.append(osp.dirname(osp.dirname(__file__)))
 import yaml
+import json
 import torch
 import os
-
 
 
 def set_environ(device="", batch=0 ):
@@ -50,8 +50,14 @@ def main():
     args = parse_args()
 
     with open(args.config, 'r', encoding='utf-8') as f:
-        cfg = yaml.load(f.read(), Loader=yaml.FullLoader)
-    set_environ(cfg["runtime"]["device"])
+        if 'yaml' in args.config:
+            cfg = yaml.load(f.read(), Loader=yaml.FullLoader)
+        elif 'json' in args.config:
+            cfg = json.load(f)
+        else:
+            raise ValueError("config file must be yaml or json")
+    device = cfg["training"]["algoParams"]["device"]
+    set_environ(device)
 
 
 
@@ -63,7 +69,7 @@ def main():
     runner.train()
 
     # 验证评估：
-    val_res = runner.val(data="coco8.yaml", imgsz=640, batch=16, conf=0.25, iou=0.6)
+    val_res = runner.val(imgsz=640, batch=16, conf=0.25, iou=0.6)
     print(val_res)
 
     # 预测：
@@ -73,8 +79,8 @@ def main():
     for res in pred_res:
         res.save("busres.jpg")
 
-    # # 导出：
-    # runner.export(format="onnx")
+    # 导出：
+    runner.export(format="onnx")
 
 
 

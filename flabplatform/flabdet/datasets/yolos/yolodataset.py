@@ -30,14 +30,15 @@ from ultralytics.data.augment import (
     v8_transforms,
 )
 from ultralytics.data.converter import merge_multi_segment
-from ultralytics.data.utils import (
-    HELP_URL,
+from flabplatform.flabdet.datasets.utils import (
     get_hash,
     img2label_paths,
+    img2label_paths_labelme,
     load_dataset_cache_file,
     save_dataset_cache_file,
     verify_image,
     verify_image_label,
+    verify_image_label_labelme,
     IMG_FORMATS,
     FORMATS_HELP_MSG
 )
@@ -132,6 +133,8 @@ class BaseDataset(Dataset):
         self.single_cls = single_cls
         self.prefix = prefix
         self.fraction = fraction
+        self.id2name = hyp.data.get("names", None)  # class names mapping
+        self.name2id = dict(zip(self.id2name.values(), self.id2name.keys())) if self.id2name else None
         self.im_files = self.get_img_files(self.img_path)
         self.labels = self.get_labels()
         self.update_labels(include_class=classes)  # single_cls and include_class
@@ -186,18 +189,21 @@ class BaseDataset(Dataset):
                     f += glob.glob(str(p / "**" / "*.*"), recursive=True)
                     # F = list(p.rglob('*.*'))  # pathlib
                 elif p.is_file():  # file
-                    with open(p, encoding="utf-8") as t:
-                        t = t.read().strip().splitlines()
-                        parent = str(p.parent) + os.sep
-                        f += [x.replace("./", parent) if x.startswith("./") else x for x in t]  # local to global path
-                        # F += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+                    if str(p).split(".")[-1].lower() in IMG_FORMATS:
+                        f.append(str(p))
+                    else:
+                        with open(p, encoding="utf-8") as t:
+                            t = t.read().strip().splitlines()
+                            parent = str(p.parent) + os.sep
+                            f += [x.replace("./", parent) if x.startswith("./") else x for x in t]  # local to global path
+                            # F += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise FileNotFoundError(f"{self.prefix}{p} does not exist")
             im_files = sorted(x.replace("/", os.sep) for x in f if x.split(".")[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert im_files, f"{self.prefix}No images found in {img_path}. {FORMATS_HELP_MSG}"
         except Exception as e:
-            raise FileNotFoundError(f"{self.prefix}Error loading data from {img_path}\n{HELP_URL}") from e
+            raise FileNotFoundError(f"{self.prefix}Error loading data from {img_path}\n") from e
         if self.fraction < 1:
             im_files = im_files[: round(len(im_files) * self.fraction)]  # retain a fraction of the dataset
         return im_files
@@ -527,7 +533,7 @@ class YOLODataset(BaseDataset):
             )
         with ThreadPool(NUM_THREADS) as pool:
             results = pool.imap(
-                func=verify_image_label,
+                func=verify_image_label_labelme,
                 iterable=zip(
                     self.im_files,
                     self.label_files,
@@ -537,6 +543,7 @@ class YOLODataset(BaseDataset):
                     repeat(nkpt),
                     repeat(ndim),
                     repeat(self.single_cls),
+                    repeat(self.name2id)
                 ),
             )
             pbar = TQDM(results, desc=desc, total=total)
@@ -566,7 +573,7 @@ class YOLODataset(BaseDataset):
         if msgs:
             LOGGER.info("\n".join(msgs))
         if nf == 0:
-            LOGGER.warning(f"{self.prefix}WARNING ⚠️ No labels found in {path}. {HELP_URL}")
+            LOGGER.warning(f"{self.prefix}WARNING ⚠️ No labels found in {path}.")
         x["hash"] = get_hash(self.label_files + self.im_files)
         x["results"] = nf, nm, ne, nc, len(self.im_files)
         x["msgs"] = msgs  # warnings
@@ -582,7 +589,8 @@ class YOLODataset(BaseDataset):
         Returns:
             (List[dict]): List of label dictionaries, each containing information about an image and its annotations.
         """
-        self.label_files = img2label_paths(self.im_files)
+        # self.label_files = img2label_paths(self.im_files)
+        self.label_files = img2label_paths_labelme(self.im_files)
         cache_path = Path(self.label_files[0]).parent.with_suffix(".cache")
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
@@ -603,7 +611,7 @@ class YOLODataset(BaseDataset):
         [cache.pop(k) for k in ("hash", "version", "msgs")]  # remove items
         labels = cache["labels"]
         if not labels:
-            LOGGER.warning(f"WARNING ⚠️ No images found in {cache_path}, training may not work correctly. {HELP_URL}")
+            LOGGER.warning(f"WARNING ⚠️ No images found in {cache_path}, training may not work correctly.")
         self.im_files = [lb["im_file"] for lb in labels]  # update im_files
 
         # Check if the dataset is all boxes or all segments
@@ -618,7 +626,7 @@ class YOLODataset(BaseDataset):
             for lb in labels:
                 lb["segments"] = []
         if len_cls == 0:
-            LOGGER.warning(f"WARNING ⚠️ No labels found in {cache_path}, training may not work correctly. {HELP_URL}")
+            LOGGER.warning(f"WARNING ⚠️ No labels found in {cache_path}, training may not work correctly.")
         return labels
 
     def build_transforms(self, hyp=None):
@@ -1150,8 +1158,7 @@ class ClassificationDataset:
         self.cache_ram = args.cache is True or str(args.cache).lower() == "ram"  # cache images into RAM
         if self.cache_ram:
             LOGGER.warning(
-                "WARNING ⚠️ Classification `cache_ram` training has known memory leak in "
-                "https://github.com/ultralytics/ultralytics/issues/9824, setting `cache_ram=False`."
+                "WARNING ⚠️ Classification `cache_ram` training has known memory leak in  setting `cache_ram=False`."
             )
             self.cache_ram = False
         self.cache_disk = str(args.cache).lower() == "disk"  # cache images on hard drive as uncompressed *.npy files

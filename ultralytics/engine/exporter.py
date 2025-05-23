@@ -74,7 +74,7 @@ from ultralytics.cfg import TASK2DATA, get_cfg
 from ultralytics.data import build_dataloader
 # from ultralytics.data.dataset import YOLODataset
 from flabplatform.flabdet.datasets.yolos import YOLODataset
-from ultralytics.data.utils import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.utils  import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Classify, Detect, RTDETRDecoder
 from ultralytics.nn.tasks import ClassificationModel, DetectionModel, SegmentationModel, WorldModel
@@ -344,7 +344,6 @@ class Exporter:
                 "WARNING ⚠️ YOLOWorld (original version) export is not supported to any format.\n"
                 "WARNING ⚠️ YOLOWorldv2 models (i.e. 'yolov8s-worldv2.pt') only support export to "
                 "(torchscript, onnx, openvino, engine, coreml) formats. "
-                "See https://docs.ultralytics.com/models/yolo-world for details."
             )
             model.clip_model = None  # openvino int8 export error: https://github.com/ultralytics/ultralytics/pull/18445
 

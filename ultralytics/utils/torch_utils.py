@@ -106,7 +106,7 @@ def autocast(enabled: bool, device: str = "cuda"):
 
 def get_cpu_info():
     """Return a string with system CPU information, i.e. 'Apple M2'."""
-    from ultralytics.utils import PERSISTENT_CACHE  # avoid circular import error
+    from flabplatform.flabdet.utils.yolos import PERSISTENT_CACHE  # avoid circular import error
 
     if "cpu_info" not in PERSISTENT_CACHE:
         try:

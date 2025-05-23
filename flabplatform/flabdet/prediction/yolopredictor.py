@@ -22,7 +22,7 @@ from flabplatform.flabdet.registry import PREDICTORS
 
 STREAM_WARNING = """
 WARNING ⚠️ inference results will accumulate in RAM unless `stream=True` is passed, causing potential out-of-memory
-errors for large sources or long-running streams and videos. See https://docs.ultralytics.com/modes/predict/ for help.
+errors for large sources or long-running streams and videos.
 
 Example:
     results = model(source=..., stream=True)  # generator of Results objects

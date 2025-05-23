@@ -14,11 +14,10 @@ from torch import distributed as dist
 from torch import nn, optim
 
 from ultralytics.data import build_dataloader #, build_yolo_dataset
-from ultralytics.data.utils import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.utils  import check_cls_dataset, check_det_dataset
 
 from ultralytics.utils import callbacks
 from ultralytics.utils.autobatch import check_train_batch_size
-from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 from ultralytics.utils.dist import ddp_cleanup, generate_ddp_command
 from ultralytics.utils.files import get_latest_run
 from ultralytics.utils.plotting import plot_images, plot_labels, plot_results
@@ -36,6 +35,7 @@ from ultralytics.utils.torch_utils import (
     torch_distributed_zero_first,
     unset_deterministic,
 )
+from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
 from flabplatform.flabdet.models import DetectionModel, attempt_load_one_weight, attempt_load_weights
@@ -49,6 +49,7 @@ from flabplatform.flabdet.utils import (
     colorstr,
     emojis,
     yaml_save,
+    DATASETS_DIR
 )
 from flabplatform import __version__
 from flabplatform.flabdet.registry import TRAINERS, VALIDATORS, DATASETS, MODELS
@@ -110,7 +111,8 @@ class BaseTrainer:
         # Dirs
         self.save_dir = get_save_dir(self.args)
         self.args.name = self.save_dir.name  # update name for loggers
-        self.wdir = self.save_dir / "weights"  # weights dir
+        # self.wdir = self.save_dir / "weights"  # weights dir #TODO
+        self.wdir = Path(self.args.modelDir)
         if RANK in {-1, 0}:
             self.wdir.mkdir(parents=True, exist_ok=True)  # make dir
             self.args.save_dir = str(self.save_dir)
@@ -541,9 +543,8 @@ class BaseTrainer:
                 "train_results": self.read_results_csv(),
                 "date": datetime.now().isoformat(),
                 "version": __version__,
-                "license": "AGPL-3.0 (https://ultralytics.com/license)",
-                "docs": "https://docs.ultralytics.com",
-                # "save_dir": self.args.save_dir,
+                "license": "",
+                "docs": "",
             },
             buffer,
         )
@@ -895,7 +896,7 @@ class DetectionTrainer(BaseTrainer):
         dataset_cfg["img_path"] = img_path
         dataset_cfg["batch_size"] = batch
         dataset_cfg["imgsz"] = self.args.imgsz
-        dataset_cfg["augment"] = mode == "train"
+        dataset_cfg["augment"] = mode == "train" # 是否进行数据增强 TODO
         dataset_cfg["hyp"] = self.args
         dataset_cfg["rect"] = mode == "val"
         dataset_cfg["cache"] = self.args.cache

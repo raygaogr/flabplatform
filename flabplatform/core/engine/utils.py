@@ -1,7 +1,8 @@
 from flabplatform.core.config import Config, ConfigDict
 from copy import deepcopy
 import os.path as osp
-from flabplatform.flabdet.utils.yolos import SETTINGS, SettingsManager
+from flabplatform.flabdet.utils.yolos import SETTINGS
+import os
 
 def merge_args(cfg, args):
     """Merge CLI arguments to config."""
@@ -69,13 +70,13 @@ def merge_args(cfg, args):
 def create_runner(args):
     """Create a runner instance."""
     cfg = Config.fromfile(args.config)
-    filename = osp.basename(args.config)
+    modelname = cfg.training['algoParams']['model']['type']
+    datasets_dir = os.path.join(cfg.commonParams["datasets"]["rootDir"])
+    save_dir = cfg.commonParams["outputDir"]
 
-    if filename.startswith('yolo'):
-        settings = SettingsManager()
-        settings.update(dict(datasets_dir=r"D:\Workspace_gr\pyProjects\flabplatform\datasets"))
-        save_dir = "D:/Workspace_gr/pyProjects/flabplatform" + "/" + cfg.runtime["save_dir"]
-        settings.update(dict(runs_dir=save_dir))
+    if 'yolo' in modelname:
+        SETTINGS.update(dict(datasets_dir=datasets_dir))
+        SETTINGS.update(dict(runs_dir=save_dir))
         from .yolorunner import YOLORunnerWarpper
         return YOLORunnerWarpper.from_cfg(cfg)
     else:

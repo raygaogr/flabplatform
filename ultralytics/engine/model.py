@@ -342,8 +342,8 @@ class Model(torch.nn.Module):
             "model": deepcopy(self.model).half() if isinstance(self.model, torch.nn.Module) else self.model,
             "date": datetime.now().isoformat(),
             "version": __version__,
-            "license": "AGPL-3.0 License (https://ultralytics.com/license)",
-            "docs": "https://docs.ultralytics.com",
+            "license": "",
+            "docs": "",
         }
         torch.save({**self.ckpt, **updates}, filename)
 

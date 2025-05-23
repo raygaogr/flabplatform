@@ -31,7 +31,7 @@ import numpy as np
 import torch
 
 from ultralytics.cfg import get_cfg, get_save_dir
-from ultralytics.data.utils import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.utils  import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import AutoBackend
 from ultralytics.utils import callbacks
 from flabplatform.flabdet.utils.yolos import LOGGER, TQDM, colorstr, emojis

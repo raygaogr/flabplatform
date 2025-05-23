@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 from ultralytics.data import build_dataloader, build_yolo_dataset
 from ultralytics.data.augment import LoadVisualPrompt
-from ultralytics.data.utils import check_det_dataset
+from flabplatform.flabdet.datasets.utils  import check_det_dataset
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.models.yolo.model import YOLOEModel
 from ultralytics.models.yolo.segment import SegmentationValidator

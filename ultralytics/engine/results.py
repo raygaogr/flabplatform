@@ -2,7 +2,6 @@
 """
 Ultralytics Results, Boxes and Masks classes for handling inference results.
 
-Usage: See https://docs.ultralytics.com/modes/predict/
 """
 
 from copy import deepcopy

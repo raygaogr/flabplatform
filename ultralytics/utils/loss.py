@@ -294,7 +294,7 @@ class v8SegmentationLoss(v8DetectionLoss):
                 "This error can occur when incorrectly training a 'segment' model on a 'detect' dataset, "
                 "i.e. 'yolo train model=yolo11n-seg.pt data=coco8.yaml'.\nVerify your dataset is a "
                 "correctly formatted 'segment' dataset using 'data=coco8-seg.yaml' "
-                "as an example.\nSee https://docs.ultralytics.com/datasets/segment/ for help."
+                "as an example.\n"
             ) from e
 
         # Pboxes
@@ -663,7 +663,7 @@ class v8OBBLoss(v8DetectionLoss):
                 "This error can occur when incorrectly training a 'OBB' model on a 'detect' dataset, "
                 "i.e. 'yolo train model=yolo11n-obb.pt data=dota8.yaml'.\nVerify your dataset is a "
                 "correctly formatted 'OBB' dataset using 'data=dota8.yaml' "
-                "as an example.\nSee https://docs.ultralytics.com/datasets/obb/ for help."
+                "as an example.\n"
             ) from e
 
         # Pboxes
