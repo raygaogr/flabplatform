@@ -14,7 +14,7 @@ import numpy as np
 import psutil
 from torch.utils.data import Dataset
 
-from flabplatform.flabdet.datasets.utils  import FORMATS_HELP_MSG, IMG_FORMATS
+from flabplatform.flabdet.datasets.utils import FORMATS_HELP_MSG, IMG_FORMATS
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOCAL_RANK, LOGGER, NUM_THREADS, TQDM
 
 class BaseDataset(Dataset):
