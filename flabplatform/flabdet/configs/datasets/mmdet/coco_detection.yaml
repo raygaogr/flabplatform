@@ -1,0 +1,114 @@
+# dataset settings
+dataset_type: &_dataset_type 'CocoDataset'
+data_root: &_data_root 'data/coco8/'
+
+# Example to use different file client
+# Method 1: simply set the data root and let the file I/O module
+# automatically infer from prefix (not support LMDB and Memcache yet)
+
+# data_root = 's3://openmmlab/datasets/detection/coco/'
+
+# Method 2: Use `backend_args`, `file_client_args` in versions before 3.0.0rc6
+# backend_args = dict(
+#     backend='petrel',
+#     path_mapping=dict({
+#         './data/': 's3://openmmlab/datasets/detection/',
+#         'data/': 's3://openmmlab/datasets/detection/'
+#     }))
+backend_args: &_backend_args null
+
+train_pipeline: &_train_pipeline
+    - type: 'LoadImageFromFile'
+      backend_args: *_backend_args
+    - type: 'LoadAnnotations'
+      with_bbox: true
+    - type: 'Resize'
+      scale: [1333, 800]
+      keep_ratio: true
+    - type: 'RandomFlip'
+      prob: 0.5
+    - type: 'PackDetInputs'
+
+test_pipeline: &_test_pipeline
+    - type: 'LoadImageFromFile'
+      backend_args: *_backend_args
+    - type: 'Resize'
+      scale: [1333, 800]
+      keep_ratio: true
+    - type: 'LoadAnnotations'
+      with_bbox: true
+    - type: 'PackDetInputs'
+      meta_keys: ['img_id', 'img_path', 'ori_shape', 'img_shape', 'scale_factor']
+
+train_dataloader:
+    batch_size: 2
+    num_workers: 2
+    persistent_workers: true
+    sampler:
+        type: 'DefaultSampler'
+        shuffle: true
+    batch_sampler:
+        type: 'AspectRatioBatchSampler'
+    dataset:
+        type: *_dataset_type
+        data_root: *_data_root
+        # ann_file: 'annotations/instances_train2017.json'
+        ann_file: 'images/train.json'
+        data_prefix:
+            img: 'images/train/'
+        filter_cfg:
+            filter_empty_gt: true
+            min_size: 32
+        pipeline: *_train_pipeline
+        backend_args: *_backend_args
+
+val_dataloader: &_val_dataloader
+    batch_size: 2
+    num_workers: 2
+    persistent_workers: true
+    drop_last: false
+    sampler:
+        type: 'DefaultSampler'
+        shuffle: false
+    dataset:
+        type: *_dataset_type
+        data_root: *_data_root
+        ann_file: 'images/val.json'
+        data_prefix:
+            img: 'images/val/'
+        test_mode: true
+        pipeline: *_test_pipeline
+        backend_args: *_backend_args
+
+test_dataloader: *_val_dataloader
+
+val_evaluator: &_val_evaluator
+    type: 'CocoMetric'
+    ann_file: 'data/coco8/images/val.json'
+    metric: 'bbox'
+    format_only: false
+    backend_args: *_backend_args
+
+test_evaluator: *_val_evaluator
+
+# inference on test dataset and
+# format the output results for submission.
+# test_dataloader = dict(
+#     batch_size=1,
+#     num_workers=2,
+#     persistent_workers=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False),
+#     dataset=dict(
+#         type=dataset_type,
+#         data_root=data_root,
+#         ann_file=data_root + 'annotations/image_info_test-dev2017.json',
+#         data_prefix=dict(img='test2017/'),
+#         test_mode=True,
+#         pipeline=test_pipeline))
+# test_evaluator = dict(
+#     type='CocoMetric',
+#     metric='bbox',
+#     format_only=True,
+#     ann_file=data_root + 'annotations/image_info_test-dev2017.json',
+#     outfile_prefix='./work_dirs/coco_detection/test')

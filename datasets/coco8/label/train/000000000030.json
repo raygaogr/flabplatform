@@ -1,0 +1,46 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "potted plant",
+      "points": [
+        [
+          204.86016,
+          31.019728000000015
+        ],
+        [
+          459.74016,
+          355.13984800000003
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "vase",
+      "points": [
+        [
+          237.56032,
+          155.809976
+        ],
+        [
+          403.96031999999997,
+          351.060152
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "000000000030.jpg",
+  "imageData": null,
+  "imageHeight": 428,
+  "imageWidth": 640
+}
