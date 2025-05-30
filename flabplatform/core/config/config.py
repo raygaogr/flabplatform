@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.text import Text
 from yapf.yapflib.yapf_api import FormatCode
 
-from mmengine.fileio import dump, load
+# from mmengine.fileio import dump, load
 from flabplatform.core.logging import print_log
 from mmengine.utils import (check_file_exist, digit_version,
                             get_installed_path, import_modules_from_strings,
@@ -847,7 +847,7 @@ class Config:
                 f'or import non-builtin module in {filename}.'  # noqa: E501
             )
 
-        filename = osp.abspath(osp.expanduser(filename))
+        filename = osp.abspath(osp.expanduser(osp.normpath(filename)))
         check_file_exist(filename)
         fileExtname = osp.splitext(filename)[1]
         if fileExtname not in ['.py', '.json', '.yaml', '.yml']:
@@ -924,6 +924,7 @@ class Config:
                         if (key not in ori_keys and not key.startswith('__'))
                     }
                 elif filename.endswith(('.yml', '.yaml', '.json')):
+                    from mmengine.fileio import load
                     cfg_dict = load(temp_config_file.name)
                 # close temp file
                 for key, value in list(cfg_dict.items()):
@@ -1227,8 +1228,8 @@ class Config:
                 else:
                     base_files = []
         elif file_format in ('.yml', '.yaml', '.json'):
-            import mmengine
-            cfg_dict = mmengine.load(filename)
+            import mmengine.fileio
+            cfg_dict = mmengine.fileio.load(filename)
             base_files = cfg_dict.get(BASE_KEY, [])
         else:
             raise ConfigParsingError(
@@ -1560,6 +1561,7 @@ class Config:
         """
         file = str(file) if isinstance(file, Path) else file
         cfg_dict = self.to_dict()
+        from mmengine.fileio import dump
         if file is None:
             if self.filename is None or self.filename.endswith('.py'):
                 return self.pretty_text

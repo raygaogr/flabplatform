@@ -11,7 +11,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 from flabplatform.core.config import Config
-from mmengine.fileio import join_path, list_from_file, load
+
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import TRANSFORMS
 from mmengine.utils import is_abs
@@ -35,6 +35,7 @@ class Compose:
             # `Compose` can be built with config dict with type and
             # corresponding arguments.
             if isinstance(transform, dict):
+                # transform['_scope_'] = "flabplatform.core"
                 transform = TRANSFORMS.build(transform)
                 if not callable(transform):
                     raise TypeError(f'transform should be a callable object, '
@@ -332,6 +333,7 @@ class BaseDataset(Dataset):
         Returns:
             list or list[dict]: Parsed annotation.
         """
+        from mmengine.fileio import join_path, list_from_file, load
         for prefix_key, prefix in self.data_prefix.items():
             assert prefix_key in raw_data_info, (
                 f'raw_data_info: {raw_data_info} dose not contain prefix key'
@@ -432,6 +434,7 @@ class BaseDataset(Dataset):
         """  # noqa: E501
         # `self.ann_file` denotes the absolute annotation file path if
         # `self.root=None` or relative path if `self.root=/path/to/data/`.
+        from mmengine.fileio import join_path, list_from_file, load
         annotations = load(self.ann_file)
         if not isinstance(annotations, dict):
             raise TypeError(f'The annotations loaded from annotation file '
@@ -493,7 +496,7 @@ class BaseDataset(Dataset):
         if not isinstance(metainfo, (Mapping, Config)):
             raise TypeError('metainfo should be a Mapping or Config, '
                             f'but got {type(metainfo)}')
-
+        from mmengine.fileio import join_path, list_from_file, load
         for k, v in metainfo.items():
             if isinstance(v, str):
                 # If type of value is string, and can be loaded from
@@ -537,6 +540,7 @@ class BaseDataset(Dataset):
         """
         # Automatically join annotation file path with `self.root` if
         # `self.ann_file` is not an absolute path.
+        from mmengine.fileio import join_path, list_from_file, load
         if self.ann_file and not is_abs(self.ann_file) and self.data_root:
             self.ann_file = join_path(self.data_root, self.ann_file)
         # Automatically join data directory with `self.root` if path value in

@@ -7,7 +7,7 @@ from collections import defaultdict
 from importlib.util import find_spec
 from typing import List, Optional, Tuple, Union
 
-from mmengine.fileio import load
+
 from mmengine.utils import check_file_exist
 
 PYTHON_ROOT_DIR = osp.dirname(osp.dirname(sys.executable))
@@ -55,6 +55,7 @@ def _get_cfg_metainfo(package_path: str, cfg_path: str) -> dict:
     Returns:
         dict: Meta information of target experiment.
     """
+    from mmengine.fileio import load
     meta_index_path = osp.join(package_path, '.mim', 'model-index.yml')
     meta_index = load(meta_index_path)
     cfg_dict = dict()

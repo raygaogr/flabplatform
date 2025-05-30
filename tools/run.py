@@ -1,3 +1,3 @@
-import subprocess
-import os
+import mmcv._ext
+print("success")
 

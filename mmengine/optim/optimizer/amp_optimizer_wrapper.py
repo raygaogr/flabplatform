@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from contextlib import contextmanager
 from typing import Union
 
@@ -7,10 +6,11 @@ import torch.nn as nn
 
 from mmengine.device import (is_cuda_available, is_mlu_available,
                              is_musa_available, is_npu_available)
-from flabplatform.core.registry import OPTIM_WRAPPERS
+
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import TORCH_VERSION
 from .optimizer_wrapper import OptimWrapper
+from flabplatform.core.registry import OPTIM_WRAPPERS
 
 if is_npu_available():
     from torch.npu.amp import GradScaler
@@ -185,6 +185,6 @@ class AmpOptimWrapper(OptimWrapper):
         Args:
             model (nn.Module): The training model.
         """
-        from mmengine.runner.amp import autocast
+        from flabplatform.core.engine.amp import autocast
         with super().optim_context(model), autocast(dtype=self.cast_dtype):
             yield

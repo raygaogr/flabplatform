@@ -1,29 +1,23 @@
 _base_: [
-    'flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml', 'flabplatform/flabdet/configs/__base__/default_runtime.yaml'
+    '../../flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml', '../../flabplatform/flabdet/configs/_base_/default_runtime.yaml'
 ]
 
 model:
     type: 'DABDETR'
     num_queries: 300
-    with_random_refpoints: false
-    num_patterns: 0
     data_preprocessor:
         type: 'DetDataPreprocessor'
         mean: [123.675, 116.28, 103.53]
         std: [58.395, 57.12, 57.375]
         bgr_to_rgb: true
-        pad_size_divisor: 1
     backbone:
         type: 'ResNet'
         depth: 50
-        num_stages: 4
         out_indices: [3]
         frozen_stages: 1
         norm_cfg:
             type: 'BN'
             requires_grad: false
-        norm_eval: true
-        style: 'pytorch'
         init_cfg:
             type: 'Pretrained'
             checkpoint: 'torchvision://resnet50'
@@ -32,50 +26,31 @@ model:
         in_channels: [2048]
         kernel_size: 1
         out_channels: 256
-        act_cfg: null
-        norm_cfg: null
-        num_outs: 1
     encoder:
         num_layers: 6
         layer_cfg:
             self_attn_cfg:
                 embed_dims: 256
                 num_heads: 8
-                dropout: 0.
                 batch_first: true
             ffn_cfg:
-                embed_dims: 256
                 feedforward_channels: 2048
-                num_fcs: 2
-                ffn_drop: 0.
                 act_cfg:
                     type: 'PReLU'
     decoder:
         num_layers: 6
-        query_dim: 4
-        query_scale_type: 'cond_elewise'
-        with_modulated_hw_attn: true
         layer_cfg:
             self_attn_cfg:
                 embed_dims: 256
                 num_heads: 8
-                attn_drop: 0.
-                proj_drop: 0.
-                cross_attn: false
             cross_attn_cfg:
                 embed_dims: 256
                 num_heads: 8
-                attn_drop: 0.
-                proj_drop: 0.
                 cross_attn: true
             ffn_cfg:
-                embed_dims: 256
                 feedforward_channels: 2048
-                num_fcs: 2
-                ffn_drop: 0.
                 act_cfg:
                     type: 'PReLU'
-        return_intermediate: true
     positional_encoding:
         num_feats: 128
         temperature: 20
@@ -115,61 +90,58 @@ model:
 # train_pipeline, NOTE the img_scale and the Pad's size_divisor is different
 # from the default setting in mmdet.
 
-train_pipeline: &_train_pipeline
-    - type: 'LoadImageFromFile'
-      backend_args: {{_base_.backend_args}}
-    - type: 'LoadAnnotations'
-      with_bbox: true
-    - type: 'RandomFlip'
-      prob: 0.5
-    - type: 'RandomChoice'
-      transforms:
-         - 
-           - type: 'RandomChoiceResize'
-             scales:
-                 - [480, 1333]
-                 - [512, 1333]
-                 - [544, 1333]
-                 - [576, 1333]  
-                 - [608, 1333]
-                 - [640, 1333]
-                 - [672, 1333]
-                 - [704, 1333]
-                 - [736, 1333]
-                 - [768, 1333]
-                 - [800, 1333]
-           
-             keep_ratio: true
-         - 
-           - type: 'RandomChoiceResize'
-             scales:
-                 - [400, 1333]  
-                 - [500, 1333]
-                 - [600, 1333]
-             keep_ratio: true
-           - type: 'RandomCrop'
-             crop_type: 'absolute_range'
-             crop_size: 
-                [384, 600]
-             allow_negative_crop: true
-           - type: 'RandomChoiceResize'
-             scales:
-                 - [480, 1333]
-                 - [512, 1333]
-                 - [544, 1333]
-                 - [576, 1333]
-                 - [608, 1333]
-                 - [640, 1333]
-                 - [672, 1333]
-                 - [704, 1333]
-                 - [736, 1333]
-                 - [768, 1333]
-                 - [800, 1333]
-             keep_ratio: true
-    - type: 'PackDetInputs'
 train_dataloader:
     dataset:
-        pipeline: *_train_pipeline
+        pipeline:
+            - type: 'LoadImageFromFile'
+              backend_args: {{_base_.backend_args}}
+            - type: 'LoadAnnotations'
+              with_bbox: true
+            - type: 'RandomFlip'
+              prob: 0.5
+            - type: 'RandomChoice'
+              transforms:
+                 - 
+                   - type: 'RandomChoiceResize'
+                     scales:
+                         - [480, 1333]
+                         - [512, 1333]
+                         - [544, 1333]
+                         - [576, 1333]  
+                         - [608, 1333]
+                         - [640, 1333]
+                         - [672, 1333]
+                         - [704, 1333]
+                         - [736, 1333]
+                         - [768, 1333]
+                         - [800, 1333]
+                     keep_ratio: true
+                 - 
+                   - type: 'RandomChoiceResize'
+                     scales:
+                         - [400, 1333]  
+                         - [500, 1333]
+                         - [600, 1333]
+                     keep_ratio: true
+                   - type: 'RandomCrop'
+                     crop_type: 'absolute_range'
+                     crop_size: [384, 600]
+                     allow_negative_crop: true
+                   - type: 'RandomChoiceResize'
+                     scales:
+                         - [480, 1333]
+                         - [512, 1333]
+                         - [544, 1333]
+                         - [576, 1333]
+                         - [608, 1333]
+                         - [640, 1333]
+                         - [672, 1333]
+                         - [704, 1333]
+                         - [736, 1333]
+                         - [768, 1333]
+                         - [800, 1333]
+                     keep_ratio: true
+            - type: 'PackDetInputs'
 
 optim_wrapper:
     type: 'OptimWrapper'
@@ -198,16 +170,13 @@ test_cfg:
 
 param_scheduler:
     - type: 'MultiStepLR'
-      begin: 0
       end: *_max_epochs
-      by_epoch: true
       milestones: [40]
-      gamma: 0.1
 
 auto_scale_lr:
     base_batch_size: 16
     enable: false
 
 randomness:
-    deterministic: True # (bool) whether to enable deterministic mode
+    deterministic: False # (bool) whether to enable deterministic mode
     seed: 0 # (int) random seed for reproducibility

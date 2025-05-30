@@ -26,9 +26,8 @@ from flabplatform.core.registry import \
 from flabplatform.core.registry import Registry
 
 __all__ = [
-    'RUNNERS', 'RUNNER_CONSTRUCTORS', 'LOOPS', 'HOOKS', 'LOG_PROCESSORS',
-    'OPTIMIZERS', 'OPTIM_WRAPPERS',
-    'PARAM_SCHEDULERS', 'DATASETS', 'DATA_SAMPLERS', 'TRANSFORMS', 'MODELS',
+    'RUNNERS', 'RUNNER_CONSTRUCTORS',  'HOOKS', 'LOG_PROCESSORS',
+    'DATASETS', 'DATA_SAMPLERS', 'MODELS',
     'MODEL_WRAPPERS', 'WEIGHT_INITIALIZERS', 'BATCH_AUGMENTS', 'TASK_UTILS',
     'METRICS', 'EVALUATORS', 'VISUALIZERS', 'VISBACKENDS'
 ]
@@ -50,13 +49,13 @@ RUNNER_CONSTRUCTORS = Registry(
     scope='flabplatform.flabdet',
     locations=['flabplatform.flabdet.engine'],
 )
-# 循环，用于定义训练或测试过程
-LOOPS = Registry(
-    'loop',
-    parent=ROOT_LOOPS,
-    scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.engine'],
-)
+# # 循环，用于定义训练或测试过程
+# LOOPS = Registry(
+#     'loop',
+#     parent=ROOT_LOOPS,
+#     scope='flabplatform.flabdet',
+#     locations=['flabplatform.flabdet.engine'],
+# )
 
 TRAINERS = Registry(
     'trainer',
@@ -76,7 +75,7 @@ HOOKS = Registry(
     'hook',
     parent=ROOT_HOOKS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.engine.hooks'],
+    locations=['flabplatform.flabdet.utils.mmdet.hooks'],
 )
 # 日志处理器，用于处理标量日志数据
 LOG_PROCESSORS = Registry(
@@ -85,28 +84,28 @@ LOG_PROCESSORS = Registry(
     parent=ROOT_LOG_PROCESSORS,
     locations=['flabplatform.flabdet.engine'],
 )
-# 优化器，用于优化模型权重，如`SGD`和`Adam`
-OPTIMIZERS = Registry(
-    'optimizer',
-    scope='flabplatform.flabdet',
-    parent=ROOT_OPTIMIZERS,
-    locations=['flabplatform.flabdet.engine'],
-)
-# 优化器包装器，用于增强优化过程
-OPTIM_WRAPPERS = Registry(
-    'optimizer_wrapper',
-    scope='flabplatform.flabdet',
-    parent=ROOT_OPTIM_WRAPPERS,
-    locations=['flabplatform.flabdet.engine'],
-)
+# # 优化器，用于优化模型权重，如`SGD`和`Adam`
+# OPTIMIZERS = Registry(
+#     'optimizer',
+#     scope='flabplatform.flabdet',
+#     parent=ROOT_OPTIMIZERS,
+#     locations=['flabplatform.flabdet.engine'],
+# )
+# # 优化器包装器，用于增强优化过程
+# OPTIM_WRAPPERS = Registry(
+#     'optimizer_wrapper',
+#     scope='flabplatform.flabdet',
+#     parent=ROOT_OPTIM_WRAPPERS,
+#     locations=['flabplatform.flabdet.engine'],
+# )
 
-# 参数调度器，用于动态调整优化参数
-PARAM_SCHEDULERS = Registry(
-    'parameter scheduler',
-    scope='flabplatform.flabdet',
-    parent=ROOT_PARAM_SCHEDULERS,
-    locations=['flabplatform.flabdet.engine'],
-)
+# # 参数调度器，用于动态调整优化参数
+# PARAM_SCHEDULERS = Registry(
+#     'parameter scheduler',
+#     scope='flabplatform.flabdet',
+#     parent=ROOT_PARAM_SCHEDULERS,
+#     locations=['flabplatform.flabdet.engine'],
+# )
 
 #######################################################################
 #                   检测任务中datasets相关的注册器                      #
@@ -124,14 +123,15 @@ DATA_SAMPLERS = Registry(
     'data sampler',
     parent=ROOT_DATA_SAMPLERS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.datasets.samplers'],
+    locations=['flabplatform.flabdet.datasets.mmdet.samplers'],
 )
+
 # 数据集的转换，用于处理数据集中的样本
 TRANSFORMS = Registry(
     'transform',
     parent=ROOT_TRANSFORMS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.datasets.transforms'],
+    locations=['flabplatform.flabdet.datasets.mmdet.transforms'],
 )
 
 #######################################################################
@@ -182,14 +182,14 @@ METRICS = Registry(
     'metric',
     parent=ROOT_METRICS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.evaluation'],
+    locations=['flabplatform.flabdet.validation.mmdet'],
 )
 # 评估器，用于定义评估过程
 EVALUATORS = Registry(
     'evaluator',
     parent=ROOT_EVALUATOR,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.evaluation'],
+    locations=['flabplatform.flabdet.validation.mmdet'],
 )
 
 #######################################################################
@@ -207,12 +207,13 @@ VISUALIZERS = Registry(
     'visualizer',
     parent=ROOT_VISUALIZERS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.visualization'],
+    locations=['flabplatform.flabdet.utils.mmdet.visualization'],
 )
+
 # 可视化后端，用于保存可视化结果，如`Tensorboard`和`Visdom`
 VISBACKENDS = Registry(
     'vis_backend',
     parent=ROOT_VISBACKENDS,
     scope='flabplatform.flabdet',
-    locations=['flabplatform.flabdet.visualization'],
+    locations=['flabplatform.flabdet.utils.mmdet.visualization'],
 )

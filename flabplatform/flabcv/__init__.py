@@ -3,7 +3,7 @@
 from .image import *
 from .transforms import *
 # from .video import *
-# from .visualization import *
+from .visualization import *
 
 # The following modules are not imported to this level, so mmcv may be used
 # without PyTorch.

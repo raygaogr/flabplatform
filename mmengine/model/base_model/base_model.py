@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from mmengine.optim import OptimWrapper
+
 from flabplatform.core.registry import MODELS
 from mmengine.utils import is_list_of
 from ..base_module import BaseModule
@@ -65,7 +65,7 @@ class BaseModel(BaseModule):
             :meth:`forward`.
         init_cfg (dict, optional): Initialization config dict.
     """
-
+    from mmengine.optim import OptimWrapper
     def __init__(self,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None):

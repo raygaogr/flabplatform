@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 import cv2
-import mmengine.fileio as fileio
 import numpy as np
 from cv2 import (IMREAD_COLOR, IMREAD_GRAYSCALE, IMREAD_IGNORE_ORIENTATION,
                  IMREAD_UNCHANGED)
@@ -216,6 +215,7 @@ def imread(img_or_path: Union[np.ndarray, str, Path],
     if isinstance(img_or_path, np.ndarray):
         return img_or_path
     elif is_str(img_or_path):
+        import mmengine.fileio as fileio
         if file_client_args is not None:
             file_client = fileio.FileClient.infer_client(
                 file_client_args, img_or_path)
@@ -352,7 +352,7 @@ def imwrite(img: np.ndarray,
     # For example, if image path is '/path/your/img.jpg', the encode
     # format is '.jpg'.
     flag, img_buff = cv2.imencode(img_ext, img, params)
-
+    import mmengine.fileio as fileio
     if file_client_args is not None:
         file_client = fileio.FileClient.infer_client(file_client_args,
                                                      file_path)

@@ -17,6 +17,7 @@ from mmengine.dist import get_dist_info
 from mmengine.fileio import FileClient, get_file_backend
 from mmengine.fileio import load as load_file
 from flabplatform.core.logging import print_log
+import mmengine.fileio
 from mmengine.model import BaseTTAModel, is_model_wrapper
 from mmengine.utils import (apply_to, deprecated_function, digit_version,
                             mkdir_or_exist)
@@ -163,7 +164,7 @@ def get_torchvision_models():
         # the resnet50 checkpoint by setting 'resnet50.imagent1k_v1',
         # 'resnet50' or 'ResNet50_Weights.IMAGENET1K_V1' in the config.
         json_path = osp.join(mmengine.__path__[0], 'hub/torchvision_0.12.json')
-        model_urls = mmengine.load(json_path)
+        model_urls = mmengine.fileio.load(json_path)
         if digit_version(torchvision.__version__) < digit_version('0.14.0a0'):
             weights_list = [
                 cls for cls_name, cls in torchvision.models.__dict__.items()

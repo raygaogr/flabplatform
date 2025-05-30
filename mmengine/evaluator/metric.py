@@ -7,7 +7,7 @@ from torch import Tensor
 
 from mmengine.dist import (broadcast_object_list, collect_results,
                            is_main_process)
-from mmengine.fileio import dump
+
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import METRICS
 from mmengine.structures import BaseDataElement
@@ -180,6 +180,7 @@ class DumpResults(BaseMetric):
 
     def compute_metrics(self, results: list) -> dict:
         """Dump the prediction results to a pickle file."""
+        from mmengine.fileio import dump
         dump(results, self.out_file_path)
         print_log(
             f'Results has been saved to {self.out_file_path}.',

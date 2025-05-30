@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type: &_dataset_type 'CocoDataset'
-data_root: &_data_root 'data/coco8/'
+data_root: &_data_root 'datasets/coco8/'
 
 # Example to use different file client
 # Method 1: simply set the data root and let the file I/O module
@@ -46,7 +46,6 @@ train_dataloader:
     persistent_workers: true
     sampler:
         type: 'DefaultSampler'
-        shuffle: true
     batch_sampler:
         type: 'AspectRatioBatchSampler'
     dataset:
@@ -84,31 +83,8 @@ test_dataloader: *_val_dataloader
 
 val_evaluator: &_val_evaluator
     type: 'CocoMetric'
-    ann_file: 'data/coco8/images/val.json'
+    ann_file: 'datasets/coco8/images/val.json'
     metric: 'bbox'
-    format_only: false
     backend_args: *_backend_args
 
 test_evaluator: *_val_evaluator
-
-# inference on test dataset and
-# format the output results for submission.
-# test_dataloader = dict(
-#     batch_size=1,
-#     num_workers=2,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False),
-#     dataset=dict(
-#         type=dataset_type,
-#         data_root=data_root,
-#         ann_file=data_root + 'annotations/image_info_test-dev2017.json',
-#         data_prefix=dict(img='test2017/'),
-#         test_mode=True,
-#         pipeline=test_pipeline))
-# test_evaluator = dict(
-#     type='CocoMetric',
-#     metric='bbox',
-#     format_only=True,
-#     ann_file=data_root + 'annotations/image_info_test-dev2017.json',
-#     outfile_prefix='./work_dirs/coco_detection/test')

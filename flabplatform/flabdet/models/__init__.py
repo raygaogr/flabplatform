@@ -13,6 +13,7 @@ from .yolomodel import (
     yaml_model_load,
     RTDETRDetectionModel
 )
+from .mmdet import *
 
 __all__ = ['DetectionModel', 'ClassificationModel', 'OBBModel', 'PoseModel', 'SegmentationModel',
            'WorldModel', 'YOLOEModel', 'YOLOESegModel', 'attempt_load_one_weight',

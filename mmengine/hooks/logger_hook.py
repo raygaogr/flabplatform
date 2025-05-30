@@ -9,8 +9,7 @@ from typing import Dict, Optional, Sequence, Union
 import numpy as np
 import torch
 
-from mmengine.fileio import FileClient, dump
-from mmengine.fileio.io import get_file_backend
+
 from mmengine.hooks import Hook
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import HOOKS
@@ -132,8 +131,10 @@ class LoggerHook(Hook):
         self.keep_local = keep_local
         self.file_client_args = file_client_args
         self.json_log_path: Optional[str] = None
-
+        from mmengine.fileio.io import get_file_backend
         if self.out_dir is not None:
+            from mmengine.fileio import FileClient, dump
+
             self.file_client = FileClient.infer_client(file_client_args,
                                                        self.out_dir)
             if file_client_args is None:
@@ -285,6 +286,8 @@ class LoggerHook(Hook):
                 metrics on test dataset. The keys are the names of the
                 metrics, and the values are corresponding results.
         """
+        from mmengine.fileio import dump
+
         tag, log_str = runner.log_processor.get_log_after_epoch(
             runner, len(runner.test_dataloader), 'test', with_non_scalar=True)
         runner.logger.info(log_str)

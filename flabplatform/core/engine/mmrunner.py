@@ -22,7 +22,7 @@ from mmengine.device import get_device
 from mmengine.dist import (broadcast, get_dist_info, get_rank, get_world_size,
                            init_dist, is_distributed, master_only)
 from mmengine.evaluator import Evaluator
-from mmengine.fileio import FileClient, join_path
+
 from mmengine.hooks import Hook
 
 from mmengine.model import (MMDistributedDataParallel, convert_sync_batchnorm,
@@ -37,17 +37,16 @@ from mmengine.utils.dl_utils import (TORCH_VERSION, collect_env,
                                      set_multi_processing)
 from mmengine.visualization import Visualizer
 from mmengine.runner.activation_checkpointing import turn_on_activation_checkpointing
-from mmengine.runner.base_loop import BaseLoop
+from flabplatform.core.engine.base_loop import BaseLoop
 from mmengine.runner.checkpoint import (_load_checkpoint, _load_checkpoint_to_model,
                          find_latest_checkpoint, save_checkpoint,
                          weights_to_cpu)
 from mmengine.runner.log_processor import LogProcessor
-from mmengine.runner.loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
+from flabplatform.core.engine.loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
 from mmengine.runner.priority import Priority, get_priority
-from mmengine.runner.utils import _get_batch_size, set_random_seed
+from flabplatform.core.engine.utils import _get_batch_size, set_random_seed
 
 from flabplatform.core.logging import MessageHub, MMLogger, print_log
-import flabplatform.core
 from flabplatform.core.config import Config, ConfigDict
 from flabplatform.core.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNCTIONS,
                                HOOKS, LOG_PROCESSORS, LOOPS, MODEL_WRAPPERS,
@@ -78,9 +77,7 @@ class _SlicedDataset:
 class MMRunner(BaseRunner):
     def __init__(self, cfg: Union[Dict, Config]):
         super().__init__()
-        self.runner = Runner.from_cfg(cfg)
-
-        pass
+        self.cfg = cfg
 
     @classmethod
     def from_cfg(cls, cfg: Union[Dict, Config]) -> 'MMRunner':
@@ -89,188 +86,33 @@ class MMRunner(BaseRunner):
             pass
         runner = cls(cfg)
         return runner
+    
+    def __call__(self, source = None, **kwargs):
+        print("call")
+        pass
+    
+    def predict(self, source = None, **kwargs):
+        print("predict")
+        pass
+
+    def val(self, **kwargs):
+        print("val")
+        pass
+
+    def export(self, format="onnx", **kwargs):
+        print("export")
+        pass
+    
+    def build_trainner(self):
+        trainer = MMTrainer.from_cfg(self.cfg)
+        return trainer
+
+    def train(self):
+        self.trainer = self.build_trainner()
+        self.trainer.train()
 
 
-class Runner:
-    """A training helper for PyTorch.
-
-    Runner object can be built from config by ``runner = Runner.from_cfg(cfg)``
-    where the ``cfg`` usually contains training, validation, and test-related
-    configurations to build corresponding components. We usually use the
-    same config to launch training, testing, and validation tasks. However,
-    only some of these components are necessary at the same time, e.g.,
-    testing a model does not need training or validation-related components.
-
-    To avoid repeatedly modifying config, the construction of ``Runner`` adopts
-    lazy initialization to only initialize components when they are going to be
-    used. Therefore, the model is always initialized at the beginning, and
-    training, validation, and, testing related components are only initialized
-    when calling ``runner.train()``, ``runner.val()``, and ``runner.test()``,
-    respectively.
-
-    Args:
-        model (:obj:`torch.nn.Module` or dict): The model to be run. It can be
-            a dict used for build a model.
-        work_dir (str): The working directory to save checkpoints. The logs
-            will be saved in the subdirectory of `work_dir` named
-            :attr:`timestamp`.
-        train_dataloader (Dataloader or dict, optional): A dataloader object or
-            a dict to build a dataloader. If ``None`` is given, it means
-            skipping training steps. Defaults to None.
-            See :meth:`build_dataloader` for more details.
-        val_dataloader (Dataloader or dict, optional): A dataloader object or
-            a dict to build a dataloader. If ``None`` is given, it means
-            skipping validation steps. Defaults to None.
-            See :meth:`build_dataloader` for more details.
-        test_dataloader (Dataloader or dict, optional): A dataloader object or
-            a dict to build a dataloader. If ``None`` is given, it means
-            skipping test steps. Defaults to None.
-            See :meth:`build_dataloader` for more details.
-        train_cfg (dict, optional): A dict to build a training loop. If it does
-            not provide "type" key, it should contain "by_epoch" to decide
-            which type of training loop :class:`EpochBasedTrainLoop` or
-            :class:`IterBasedTrainLoop` should be used. If ``train_cfg``
-            specified, :attr:`train_dataloader` should also be specified.
-            Defaults to None. See :meth:`build_train_loop` for more details.
-        val_cfg (dict, optional): A dict to build a validation loop. If it does
-            not provide "type" key, :class:`ValLoop` will be used by default.
-            If ``val_cfg`` specified, :attr:`val_dataloader` should also be
-            specified. If ``ValLoop`` is built with `fp16=True``,
-            ``runner.val()`` will be performed under fp16 precision.
-            Defaults to None. See :meth:`build_val_loop` for more details.
-        test_cfg (dict, optional): A dict to build a test loop. If it does
-            not provide "type" key, :class:`TestLoop` will be used by default.
-            If ``test_cfg`` specified, :attr:`test_dataloader` should also be
-            specified. If ``ValLoop`` is built with `fp16=True``,
-            ``runner.val()`` will be performed under fp16 precision.
-            Defaults to None. See :meth:`build_test_loop` for more details.
-        auto_scale_lr (dict, Optional): Config to scale the learning rate
-            automatically. It includes ``base_batch_size`` and ``enable``.
-            ``base_batch_size`` is the batch size that the optimizer lr is
-            based on. ``enable`` is the switch to turn on and off the feature.
-        optim_wrapper (OptimWrapper or dict, optional):
-            Computing gradient of model parameters. If specified,
-            :attr:`train_dataloader` should also be specified. If automatic
-            mixed precision or gradient accmulation
-            training is required. The type of ``optim_wrapper`` should be
-            AmpOptimizerWrapper. See :meth:`build_optim_wrapper` for
-            examples. Defaults to None.
-        param_scheduler (_ParamScheduler or dict or list, optional):
-            Parameter scheduler for updating optimizer parameters. If
-            specified, :attr:`optimizer` should also be specified.
-            Defaults to None.
-            See :meth:`build_param_scheduler` for examples.
-        val_evaluator (Evaluator or dict or list, optional): A evaluator object
-            used for computing metrics for validation. It can be a dict or a
-            list of dict to build a evaluator. If specified,
-            :attr:`val_dataloader` should also be specified. Defaults to None.
-        test_evaluator (Evaluator or dict or list, optional): A evaluator
-            object used for computing metrics for test steps. It can be a dict
-            or a list of dict to build a evaluator. If specified,
-            :attr:`test_dataloader` should also be specified. Defaults to None.
-        default_hooks (dict[str, dict] or dict[str, Hook], optional): Hooks to
-            execute default actions like updating model parameters and saving
-            checkpoints. Default hooks are ``OptimizerHook``,
-            ``IterTimerHook``, ``LoggerHook``, ``ParamSchedulerHook`` and
-            ``CheckpointHook``. Defaults to None.
-            See :meth:`register_default_hooks` for more details.
-        custom_hooks (list[dict] or list[Hook], optional): Hooks to execute
-            custom actions like visualizing images processed by pipeline.
-            Defaults to None.
-        data_preprocessor (dict, optional): The pre-process config of
-            :class:`BaseDataPreprocessor`. If the ``model`` argument is a dict
-            and doesn't contain the key ``data_preprocessor``, set the argument
-            as the ``data_preprocessor`` of the ``model`` dict.
-            Defaults to None.
-        load_from (str, optional): The checkpoint file to load from.
-            Defaults to None.
-        resume (bool): Whether to resume training. Defaults to False. If
-            ``resume`` is True and ``load_from`` is None, automatically to
-            find latest checkpoint from ``work_dir``. If not found, resuming
-            does nothing.
-        launcher (str): Way to launcher multi-process. Supported launchers
-            are 'pytorch', 'mpi', 'slurm' and 'none'. If 'none' is provided,
-            non-distributed environment will be launched.
-        env_cfg (dict): A dict used for setting environment. Defaults to
-            dict(dist_cfg=dict(backend='nccl')).
-        log_processor (dict, optional): A processor to format logs. Defaults to
-            None.
-        log_level (int or str): The log level of MMLogger handlers.
-            Defaults to 'INFO'.
-        visualizer (Visualizer or dict, optional): A Visualizer object or a
-            dict build Visualizer object. Defaults to None. If not
-            specified, default config will be used.
-        default_scope (str): Used to reset registries location.
-            Defaults to "mmengine".
-        randomness (dict): Some settings to make the experiment as reproducible
-            as possible like seed and deterministic.
-            Defaults to ``dict(seed=None)``. If seed is None, a random number
-            will be generated and it will be broadcasted to all other processes
-            if in distributed environment. If ``cudnn_benchmark`` is
-            ``True`` in ``env_cfg`` but ``deterministic`` is ``True`` in
-            ``randomness``, the value of ``torch.backends.cudnn.benchmark``
-            will be ``False`` finally.
-        experiment_name (str, optional): Name of current experiment. If not
-            specified, timestamp will be used as ``experiment_name``.
-            Defaults to None.
-        cfg (dict or Configdict or :obj:`Config`, optional): Full config.
-            Defaults to None.
-
-    Note:
-        Since PyTorch 2.0.0, you can enable ``torch.compile`` by passing in
-        `cfg.compile = True`. If you want to control compile options, you
-        can pass a dict, e.g. ``cfg.compile = dict(backend='eager')``.
-        Refer to `PyTorch API Documentation <https://pytorch.org/docs/
-        master/generated/torch.compile.html#torch.compile>`_ for more valid
-        options.
-
-    Examples:
-        >>> from mmengine.runner import Runner
-        >>> cfg = dict(
-        >>>     model=dict(type='ToyModel'),
-        >>>     work_dir='path/of/work_dir',
-        >>>     train_dataloader=dict(
-        >>>     dataset=dict(type='ToyDataset'),
-        >>>     sampler=dict(type='DefaultSampler', shuffle=True),
-        >>>     batch_size=1,
-        >>>     num_workers=0),
-        >>>     val_dataloader=dict(
-        >>>         dataset=dict(type='ToyDataset'),
-        >>>         sampler=dict(type='DefaultSampler', shuffle=False),
-        >>>        batch_size=1,
-        >>>        num_workers=0),
-        >>>     test_dataloader=dict(
-        >>>         dataset=dict(type='ToyDataset'),
-        >>>         sampler=dict(type='DefaultSampler', shuffle=False),
-        >>>         batch_size=1,
-        >>>         num_workers=0),
-        >>>     auto_scale_lr=dict(base_batch_size=16, enable=False),
-        >>>     optim_wrapper=dict(type='OptimizerWrapper', optimizer=dict(
-        >>>         type='SGD', lr=0.01)),
-        >>>     param_scheduler=dict(type='MultiStepLR', milestones=[1, 2]),
-        >>>     val_evaluator=dict(type='ToyEvaluator'),
-        >>>     test_evaluator=dict(type='ToyEvaluator'),
-        >>>     train_cfg=dict(by_epoch=True, max_epochs=3, val_interval=1),
-        >>>     val_cfg=dict(),
-        >>>     test_cfg=dict(),
-        >>>     custom_hooks=[],
-        >>>     default_hooks=dict(
-        >>>         timer=dict(type='IterTimerHook'),
-        >>>         checkpoint=dict(type='CheckpointHook', interval=1),
-        >>>         logger=dict(type='LoggerHook'),
-        >>>         optimizer=dict(type='OptimizerHook', grad_clip=False),
-        >>>         param_scheduler=dict(type='ParamSchedulerHook')),
-        >>>     launcher='none',
-        >>>     env_cfg=dict(dist_cfg=dict(backend='nccl')),
-        >>>     log_processor=dict(window_size=20),
-        >>>     visualizer=dict(type='Visualizer',
-        >>>     vis_backends=[dict(type='LocalVisBackend',
-        >>>                        save_dir='temp_dir')])
-        >>>    )
-        >>> runner = Runner.from_cfg(cfg)
-        >>> runner.train()
-        >>> runner.test()
-    """
+class MMTrainer:
     cfg: Config
     _train_loop: Optional[Union[BaseLoop, Dict]]
     _val_loop: Optional[Union[BaseLoop, Dict]]
@@ -291,26 +133,17 @@ class Runner:
         param_scheduler: Optional[Union[_ParamScheduler, Dict, List]] = None,
         val_evaluator: Optional[Union[Evaluator, Dict, List]] = None,
         test_evaluator: Optional[Union[Evaluator, Dict, List]] = None,
-        default_hooks: Optional[Dict[str, Union[Hook, Dict]]] = None,
         custom_hooks: Optional[List[Union[Hook, Dict]]] = None,
-        data_preprocessor: Union[nn.Module, Dict, None] = None,
         load_from: Optional[str] = None,
         resume: bool = False,
-        launcher: str = 'none',
-        env_cfg: Dict = dict(dist_cfg=dict(backend='nccl')),
-        log_processor: Optional[Dict] = None,
-        log_level: str = 'INFO',
-        visualizer: Optional[Union[Visualizer, Dict]] = None,
         default_scope: str = 'mmengine',
         randomness: Dict = dict(seed=None),
         experiment_name: Optional[str] = None,
         cfg: Optional[ConfigType] = None,
     ):
         self._work_dir = osp.abspath(work_dir)
-        mmengine.mkdir_or_exist(self._work_dir)
+        mmengine.mkdir_or_exist(self._work_dir) # TODO
 
-        # recursively copy the `cfg` because `self.cfg` will be modified
-        # everywhere.
         if cfg is not None:
             if isinstance(cfg, Config):
                 self.cfg = copy.deepcopy(cfg)
@@ -320,7 +153,7 @@ class Runner:
             self.cfg = Config(dict())
 
         # lazy initialization
-        training_related = [train_dataloader, train_cfg, optim_wrapper]
+        training_related = [train_dataloader, train_cfg, optim_wrapper] #TODO
         if not (all(item is None for item in training_related)
                 or all(item is not None for item in training_related)):
             raise ValueError(
@@ -335,7 +168,7 @@ class Runner:
         self.optim_wrapper: Optional[Union[OptimWrapper, dict]]
         self.optim_wrapper = optim_wrapper
 
-        self.auto_scale_lr = auto_scale_lr
+        self.auto_scale_lr = auto_scale_lr #TODO
 
         # If there is no need to adjust learning rate, momentum or other
         # parameters of optimizer, param_scheduler can be None
@@ -353,9 +186,8 @@ class Runner:
         self.param_schedulers = param_scheduler
 
         val_related = [val_dataloader, val_cfg, val_evaluator]
-        if not (all(item is None
-                    for item in val_related) or all(item is not None
-                                                    for item in val_related)):
+        if not (all(item is None for item in val_related) 
+                or all(item is not None for item in val_related)):
             raise ValueError(
                 'val_dataloader, val_cfg, and val_evaluator should be either '
                 'all None or not None, but got '
@@ -363,7 +195,6 @@ class Runner:
                 f'val_evaluator={val_evaluator}')
         self._val_dataloader = val_dataloader
         self._val_loop = val_cfg
-
         self._val_evaluator = val_evaluator
 
         test_related = [test_dataloader, test_cfg, test_evaluator]
@@ -376,29 +207,23 @@ class Runner:
                 f'test_evaluator={test_evaluator}')
         self._test_dataloader = test_dataloader
         self._test_loop = test_cfg
-
         self._test_evaluator = test_evaluator
-
-        self._launcher = launcher
-        if self._launcher == 'none':
-            self._distributed = False
-        else:
-            self._distributed = True
 
         # self._timestamp will be set in the `setup_env` method. Besides,
         # it also will initialize multi-process and (or) distributed
         # environment.
-        self.setup_env(env_cfg)
+        self.setup_env()
+
         # self._deterministic and self._seed will be set in the
         # `set_randomness`` method
         self._randomness_cfg = randomness
         self.set_randomness(**randomness)
 
         if experiment_name is not None:
-            self._experiment_name = f'{experiment_name}_{self._timestamp}'
+            self._experiment_name = f'{experiment_name}_{self.timestamp}'
         elif self.cfg.filename is not None:
             filename_no_ext = osp.splitext(osp.basename(self.cfg.filename))[0]
-            self._experiment_name = f'{filename_no_ext}_{self._timestamp}'
+            self._experiment_name = f'{filename_no_ext}_{self.timestamp}'
         else:
             self._experiment_name = self.timestamp
         self._log_dir = osp.join(self.work_dir, self.timestamp)
@@ -412,14 +237,12 @@ class Runner:
         self.default_scope = default_scope
 
         # Build log processor to format message.
-        log_processor = dict() if log_processor is None else log_processor
-        self.log_processor = self.build_log_processor(log_processor)
+        self.log_processor = LogProcessor(window_size=50, by_epoch=True)
         # Since `get_instance` could return any subclass of ManagerMixin. The
         # corresponding attribute needs a type hint.
-        self.logger = self.build_logger(log_level=log_level, logger_name="cloudplatform")
-
+        self.logger = self.build_logger(logger_name="flabplatform")
         # Collect and log environment information.
-        self._log_env(env_cfg)
+        self._log_env()
 
         # Build `message_hub` for communication among components.
         # `message_hub` can store log scalars (loss, learning rate) and
@@ -432,7 +255,7 @@ class Runner:
         # See `MessageHub` and `ManagerMixin` for more details.
         self.message_hub = self.build_message_hub()
         # visualizer used for writing log or visualizing all kinds of data
-        self.visualizer = self.build_visualizer(visualizer)
+        self.visualizer = self.build_visualizer()
         if self.cfg:
             self.visualizer.add_config(self.cfg)
 
@@ -442,9 +265,6 @@ class Runner:
         self._has_loaded = False
 
         # build a model
-        if isinstance(model, dict) and data_preprocessor is not None:
-            # Merge the data_preprocessor to model config.
-            model.setdefault('data_preprocessor', data_preprocessor)
         self.model = self.build_model(model)
         # wrap model
         self.model = self.wrap_model(
@@ -458,7 +278,7 @@ class Runner:
 
         self._hooks: List[Hook] = []
         # register hooks to `self._hooks`
-        self.register_hooks(default_hooks, custom_hooks)
+        self.register_hooks(logger_interval=50, ckpt_interval=1, custom_hooks=custom_hooks)
         # log hooks information
         self.logger.info(f'Hooks will be executed in the following '
                          f'order:\n{self.get_hooks_info()}')
@@ -467,7 +287,7 @@ class Runner:
         self.dump_config()
 
     @classmethod
-    def from_cfg(cls, cfg: ConfigType) -> 'Runner':
+    def from_cfg(cls, cfg: ConfigType) -> 'MMTrainer':
         """Build a runner from config.
 
         Args:
@@ -492,21 +312,14 @@ class Runner:
             param_scheduler=cfg.get('param_scheduler'),
             val_evaluator=cfg.get('val_evaluator'),
             test_evaluator=cfg.get('test_evaluator'),
-            default_hooks=cfg.get('default_hooks'),
-            custom_hooks=cfg.get('custom_hooks'),
-            data_preprocessor=cfg.get('data_preprocessor'),
             load_from=cfg.get('load_from'),
             resume=cfg.get('resume', False),
-            launcher=cfg.get('launcher', 'none'),
-            env_cfg=cfg.get('env_cfg', dict(dist_cfg=dict(backend='nccl'))),
-            log_processor=cfg.get('log_processor'),
-            log_level=cfg.get('log_level', 'INFO'),
-            visualizer=cfg.get('visualizer'),
             default_scope=cfg.get('default_scope', 'mmengine'),
             randomness=cfg.get('randomness', dict(seed=None)),
             experiment_name=cfg.get('experiment_name'),
             cfg=cfg,
         )
+
         return runner
 
     @property
@@ -663,7 +476,7 @@ class Runner:
         training."""
         return self.train_loop.val_begin
 
-    def setup_env(self, env_cfg: Dict) -> None:
+    def setup_env(self, backend = "nccl", mp_start_method="fork", opencv_num_threads=0, cudnn_benchmark=False, launcher="none", resource_limit=4096) -> None:
         """Setup environment.
 
         An example of ``env_cfg``::
@@ -681,16 +494,20 @@ class Runner:
         Args:
             env_cfg (dict): Config for setting environment.
         """
-        if env_cfg.get('cudnn_benchmark'):
+        self._launcher = launcher
+        if self._launcher == 'none':
+            self._distributed = False
+        else:
+            self._distributed = True
+
+        if cudnn_benchmark:
             torch.backends.cudnn.benchmark = True
 
-        mp_cfg: dict = env_cfg.get('mp_cfg', {})
-        set_multi_processing(**mp_cfg, distributed=self.distributed)
+        set_multi_processing(mp_start_method = mp_start_method, opencv_num_threads = opencv_num_threads, distributed = self.distributed)
 
         # init distributed env first, since logger depends on the dist info.
         if self.distributed and not is_distributed():
-            dist_cfg: dict = env_cfg.get('dist_cfg', {})
-            init_dist(self.launcher, **dist_cfg)
+            init_dist(self.launcher, backend = backend)
 
         self._rank, self._world_size = get_dist_info()
 
@@ -708,7 +525,7 @@ class Runner:
             base_soft_limit = rlimit[0]
             hard_limit = rlimit[1]
             soft_limit = min(
-                max(env_cfg.get('resource_limit', 4096), base_soft_limit),
+                max(resource_limit, base_soft_limit),
                 hard_limit)
             resource.setrlimit(resource.RLIMIT_NOFILE,
                                (soft_limit, hard_limit))
@@ -788,10 +605,7 @@ class Runner:
 
         return MessageHub.get_instance(**message_hub)
 
-    def build_visualizer(
-            self,
-            visualizer: Optional[Union[Visualizer,
-                                       Dict]] = None) -> Visualizer:
+    def build_visualizer(self) -> Visualizer:
         """Build a global asscessable Visualizer.
 
         Args:
@@ -804,25 +618,12 @@ class Runner:
         Returns:
             Visualizer: A Visualizer object build from ``visualizer``.
         """
-        if visualizer is None:
-            visualizer = dict(
-                name=self._experiment_name,
-                vis_backends=[dict(type='LocalVisBackend')],
-                save_dir=self._log_dir)
-            return Visualizer.get_instance(**visualizer)
-
-        if isinstance(visualizer, Visualizer):
-            return visualizer
-
-        if isinstance(visualizer, dict):
-            # ensure visualizer containing name key
-            visualizer.setdefault('name', self._experiment_name)
-            visualizer.setdefault('save_dir', self._log_dir)
-            return VISUALIZERS.build(visualizer)
-        else:
-            raise TypeError(
-                'visualizer should be Visualizer object, a dict or None, '
-                f'but got {visualizer}')
+        visualizer = dict()
+        visualizer.setdefault('vis_backends', [dict(type='LocalVisBackend')])
+        visualizer.setdefault('type', 'DetLocalVisualizer')
+        visualizer.setdefault('name', 'det_visualizer')
+        visualizer.setdefault('save_dir', self._log_dir)
+        return VISUALIZERS.build(visualizer)
 
     def build_model(self, model: Union[nn.Module, Dict]) -> nn.Module:
         """Build model.
@@ -1533,7 +1334,6 @@ class Runner:
         if 'type' in loop_cfg and 'by_epoch' in loop_cfg:
             raise RuntimeError(
                 'Only one of `type` or `by_epoch` can exist in `loop_cfg`.')
-
         if 'type' in loop_cfg:
             loop = LOOPS.build(
                 loop_cfg,
@@ -1964,12 +1764,12 @@ class Runner:
                 to be registered.
         """
         default_hooks: dict = dict(
-            runtime_info=dict(type='RuntimeInfoHook'),
-            timer=dict(type='IterTimerHook'),
-            sampler_seed=dict(type='DistSamplerSeedHook'),
-            logger=dict(type='LoggerHook'),
-            param_scheduler=dict(type='ParamSchedulerHook'),
-            checkpoint=dict(type='CheckpointHook', interval=1),
+            runtime_info=dict(type='RuntimeInfoHook', _scope_="flabplatform.core"),
+            timer=dict(type='IterTimerHook', _scope_="flabplatform.core"),
+            sampler_seed=dict(type='DistSamplerSeedHook', _scope_="flabplatform.core"),
+            logger=dict(type='LoggerHook', _scope_="flabplatform.core"),
+            param_scheduler=dict(type='ParamSchedulerHook', _scope_="flabplatform.core"),
+            checkpoint=dict(type='CheckpointHook', interval=1, _scope_="flabplatform.core"),
         )
         if hooks is not None:
             for name, hook in hooks.items():
@@ -1995,6 +1795,8 @@ class Runner:
 
     def register_hooks(
             self,
+            logger_interval=50,
+            ckpt_interval=1,
             default_hooks: Optional[Dict[str, Union[Hook, Dict]]] = None,
             custom_hooks: Optional[List[Union[Hook, Dict]]] = None) -> None:
         """Register default hooks and custom hooks into hook list.
@@ -2007,6 +1809,13 @@ class Runner:
                 custom actions like visualizing images processed by pipeline.
                 Defaults to None.
         """
+        default_hooks = dict()
+        default_hooks['timer'] = dict(type='IterTimerHook', _scope_="flabplatform.core")
+        default_hooks['logger'] = dict(type='LoggerHook', interval=logger_interval, _scope_="flabplatform.core")
+        default_hooks['param_scheduler'] = dict(type='ParamSchedulerHook', _scope_="flabplatform.core")
+        default_hooks['checkpoint'] = dict(type='CheckpointHook', interval=ckpt_interval, _scope_="flabplatform.core")
+        default_hooks['sampler_seed'] = dict(type='DistSamplerSeedHook', _scope_="flabplatform.core")
+        default_hooks['visualization'] = dict(type='DetVisualizationHook')
         self.register_default_hooks(default_hooks)
 
         if custom_hooks is not None:
@@ -2043,7 +1852,7 @@ class Runner:
         # check whether the number of GPU used for current experiment
         # is consistent with resuming from checkpoint
         if 'config' in checkpoint['meta']:
-            config = flabplatform.core.config.fromstring(
+            config = mmengine.Config.fromstring(
                 checkpoint['meta']['config'], file_format='.py')
             previous_gpu_ids = config.get('gpu_ids', None)
             if (previous_gpu_ids is not None and len(previous_gpu_ids) > 0
@@ -2213,7 +2022,7 @@ class Runner:
         else:
             meta.setdefault('epoch', self.epoch)
             meta.setdefault('iter', self.iter + 1)
-
+        from mmengine.fileio import FileClient, join_path
         if file_client_args is not None:
             warnings.warn(
                 '"file_client_args" will be deprecated in future. '
@@ -2376,7 +2185,7 @@ class Runner:
                 'single optimizer. If it does not contain key `type`, it '
                 'means multiple lists of schedulers for multiple optimizers.')
 
-    def _log_env(self, env_cfg: dict) -> None:
+    def _log_env(self) -> None:
         """Logging environment information of the current task.
 
         Args:
@@ -2385,7 +2194,6 @@ class Runner:
         # Collect and log environment information.
         env = collect_env()
         runtime_env = OrderedDict()
-        runtime_env.update(env_cfg)
         runtime_env.update(self._randomness_cfg)
         runtime_env['seed'] = self._seed
         runtime_env['Distributed launcher'] = self._launcher

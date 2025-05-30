@@ -237,7 +237,7 @@ def rescale_size(old_size: tuple,
         if scale <= 0:
             raise ValueError(f'Invalid scale {scale}, must be positive.')
         scale_factor = scale
-    elif isinstance(scale, tuple):
+    elif isinstance(scale, (tuple, list)):
         max_long_edge = max(scale)
         max_short_edge = min(scale)
         scale_factor = min(max_long_edge / max(h, w),

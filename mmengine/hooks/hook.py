@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, Optional, Sequence, Union
 
-from mmengine import is_method_overridden
 
 DATA_BATCH = Optional[Union[dict, tuple, list]]
 
@@ -424,6 +423,8 @@ class Hook:
         Returns:
             list: List of triggered stages.
         """
+        from mmengine import is_method_overridden
+
         trigger_stages = set()
         for stage in Hook.stages:
             if is_method_overridden(stage, Hook, self):

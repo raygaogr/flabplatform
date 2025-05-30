@@ -59,8 +59,6 @@ def main():
     device = cfg["training"]["algoParams"]["device"]
     set_environ(device)
 
-
-
     from flabplatform.core.engine import create_runner
     # 构建执行器
     runner = create_runner(args)
@@ -68,19 +66,19 @@ def main():
     # 训练：
     runner.train()
 
-    # 验证评估：
-    val_res = runner.val(imgsz=640, batch=16, conf=0.25, iou=0.6)
-    print(val_res)
+    # # 验证评估：
+    # val_res = runner.val(imgsz=640, batch=16, conf=0.25, iou=0.6)
+    # print(val_res)
 
-    # 预测：
-    pred_res = runner.predict(source="assets/bus.jpg", conf=0.25, iou=0.6)
-    # or
-    pred_res = runner("assets/bus.jpg", conf=0.25, iou=0.6)
-    for res in pred_res:
-        res.save("busres.jpg")
+    # # 预测：
+    # pred_res = runner.predict(source="assets/bus.jpg", conf=0.25, iou=0.6)
+    # # or
+    # pred_res = runner("assets/bus.jpg", conf=0.25, iou=0.6)
+    # for res in pred_res:
+    #     res.save("busres.jpg")
 
-    # 导出：
-    runner.export(format="onnx")
+    # # 导出：
+    # runner.export(format="onnx")
 
 
 

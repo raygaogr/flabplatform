@@ -7,8 +7,7 @@ from typing import Any, Generator, Iterator, Optional, Tuple, Union
 
 from flabplatform.core.logging import print_log
 from mmengine.utils import is_filepath
-from .backends import (BaseStorageBackend, HTTPBackend, LmdbBackend,
-                       LocalBackend, MemcachedBackend, PetrelBackend)
+from .backends import LocalBackend
 
 
 class HardDiskBackend(LocalBackend):
@@ -65,7 +64,8 @@ class FileClient:
     Attributes:
         client (:obj:`BaseStorageBackend`): The backend object.
     """
-
+    from .backends import (BaseStorageBackend, HTTPBackend, LmdbBackend,
+                       LocalBackend, MemcachedBackend, PetrelBackend)
     _backends = {
         'disk': HardDiskBackend,
         'memcached': MemcachedBackend,
@@ -195,6 +195,7 @@ class FileClient:
         if not inspect.isclass(backend):
             raise TypeError(
                 f'backend should be a class but got {type(backend)}')
+        from .backends import BaseStorageBackend
         if not issubclass(backend, BaseStorageBackend):
             raise TypeError(
                 f'backend {backend} is not a subclass of BaseStorageBackend')

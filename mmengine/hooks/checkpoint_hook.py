@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Union
 
 from mmengine.dist import is_main_process, master_only
-from mmengine.fileio import FileClient, get_file_backend
+
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import HOOKS
 from mmengine.utils import is_list_of, is_seq_of
@@ -264,6 +264,7 @@ class CheckpointHook(Hook):
         Args:
             runner (Runner): The runner of the training process.
         """
+        from mmengine.fileio import FileClient, get_file_backend
         if self.out_dir is None:
             self.out_dir = runner.work_dir
 

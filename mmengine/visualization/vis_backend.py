@@ -15,7 +15,7 @@ import numpy as np
 import torch
 
 from flabplatform.core.config import Config, ConfigDict
-from mmengine.fileio import dump
+
 from mmengine.hooks.logger_hook import SUFFIX_TYPE
 from flabplatform.core.logging import MMLogger, print_log
 from flabplatform.core.registry import VISBACKENDS
@@ -321,6 +321,7 @@ class LocalVisBackend(BaseVisBackend):
            file_path (str): The file path to save data.
            file_format (str): The file format to save data.
         """
+        from mmengine.fileio import dump
         with open(file_path, 'a+') as f:
             dump(value_dict, f, file_format=file_format)
             f.write('\n')

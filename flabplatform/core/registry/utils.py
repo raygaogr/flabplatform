@@ -3,7 +3,7 @@ import logging
 import os.path as osp
 from typing import Optional
 
-from mmengine.fileio import dump
+
 from flabplatform.core.logging import print_log
 from . import root
 from .default_scope import DefaultScope
@@ -87,6 +87,7 @@ def count_registered_modules(save_path: Optional[str] = None,
         print_log(
             f'Finish registry analysis, got: {scan_data}', logger='current')
     if save_path is not None:
+        from mmengine.fileio import dump
         json_path = osp.join(save_path, 'modules_statistic_results.json')
         dump(scan_data, json_path, indent=2)
         print_log(f'Result has been saved to {json_path}', logger='current')

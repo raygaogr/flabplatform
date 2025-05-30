@@ -38,7 +38,6 @@ from pathlib import Path
 from typing import Generator, Iterator, Optional, Tuple, Union
 
 from mmengine.utils import is_filepath, is_str
-from .backends import backends, prefix_to_backends
 from .file_client import FileClient
 # file_handlers and register_handler had been moved to
 # mmengine/fileio/handlers/registry_utis. Import them
@@ -89,6 +88,8 @@ def _get_file_backend(prefix: str, backend_args: dict):
         backend_args (dict): Arguments to instantiate the corresponding
             backend.
     """
+    from .backends import backends, prefix_to_backends
+
     # backend name has a higher priority
     if 'backend' in backend_args:
         # backend_args should not be modified
