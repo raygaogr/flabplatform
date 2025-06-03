@@ -8,6 +8,7 @@ from .checkpoint import (CheckpointLoader, find_latest_checkpoint,
                          load_state_dict, save_checkpoint, weights_to_cpu)
 from .log_processor import LogProcessor
 from .priority import Priority, get_priority
+from .amp import autocast
 
 __all__ = [
     'FlexibleRunner',
@@ -25,5 +26,6 @@ __all__ = [
     'weights_to_cpu',
     'LogProcessor',
     'Priority',
-    'get_priority'
+    'get_priority',
+    'autocast'
 ]

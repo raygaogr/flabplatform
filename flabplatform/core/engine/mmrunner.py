@@ -37,14 +37,14 @@ from mmengine.utils.dl_utils import (TORCH_VERSION, collect_env,
                                      set_multi_processing)
 from mmengine.visualization import Visualizer
 from mmengine.runner.activation_checkpointing import turn_on_activation_checkpointing
-from flabplatform.core.engine.base_loop import BaseLoop
+from mmengine.runner.base_loop import BaseLoop
 from mmengine.runner.checkpoint import (_load_checkpoint, _load_checkpoint_to_model,
                          find_latest_checkpoint, save_checkpoint,
                          weights_to_cpu)
 from mmengine.runner.log_processor import LogProcessor
-from flabplatform.core.engine.loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
+from mmengine.runner.loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
 from mmengine.runner.priority import Priority, get_priority
-from flabplatform.core.engine.utils import _get_batch_size, set_random_seed
+from mmengine.runner.utils import _get_batch_size, set_random_seed
 
 from flabplatform.core.logging import MessageHub, MMLogger, print_log
 from flabplatform.core.config import Config, ConfigDict

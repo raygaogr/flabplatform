@@ -185,6 +185,6 @@ class AmpOptimWrapper(OptimWrapper):
         Args:
             model (nn.Module): The training model.
         """
-        from flabplatform.core.engine.amp import autocast
+        from mmengine.runner.amp import autocast
         with super().optim_context(model), autocast(dtype=self.cast_dtype):
             yield

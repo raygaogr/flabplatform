@@ -10,8 +10,7 @@ from ultralytics.data.build import load_inference_source
 from ultralytics.models import yolo
 from ultralytics.engine.results import Results
 from ultralytics.utils import callbacks
-from flabplatform.flabdet.utils.yolos import checks
-
+from flabplatform.flabdet.utils.yolos import checks, SETTINGS
 from flabplatform.flabdet.registry import MODELS, TRAINERS, PREDICTORS, VALIDATORS
 from flabplatform.flabdet.utils import (
     ASSETS,
@@ -1122,6 +1121,10 @@ class YOLORunnerWarpper(YOLORunner):
 
     @classmethod
     def from_cfg(cls, cfg: Config):
+        datasets_dir = os.path.join(cfg.commonParams["datasets"]["rootDir"])
+        save_dir = cfg.commonParams["outputDir"]
+        SETTINGS.update(dict(datasets_dir=datasets_dir))
+        SETTINGS.update(dict(runs_dir=save_dir))
         cfg_dict = cfg.to_dict()
         special_keys = ["model", "optimizer"]
         ignore_keys = ["mqTopic", "rootDir", "type"] #TODO

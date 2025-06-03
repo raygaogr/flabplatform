@@ -27,12 +27,12 @@ from flabplatform.core.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNC
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import TORCH_VERSION
 from mmengine.visualization import Visualizer
-from flabplatform.core.engine.base_loop import BaseLoop
+from .base_loop import BaseLoop
 from .checkpoint import find_latest_checkpoint
 from .log_processor import LogProcessor
-from flabplatform.core.engine.loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
+from .loops import EpochBasedTrainLoop, IterBasedTrainLoop, TestLoop, ValLoop
 from .priority import Priority, get_priority
-from flabplatform.core.engine.utils import _get_batch_size
+from .utils import _get_batch_size
 
 ConfigType = Union[Dict, Config, ConfigDict]
 ParamSchedulerType = Union[List[_ParamScheduler], Dict[str,
