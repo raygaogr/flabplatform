@@ -16,7 +16,12 @@ from .transformer import (MLP, AdaptivePadding,
                           Mask2FormerTransformerDecoder,
                           Mask2FormerTransformerDecoderLayer,
                           Mask2FormerTransformerEncoder, 
-                          CdnQueryGenerator, DinoTransformerDecoder)
+                          CdnQueryGenerator, DinoTransformerDecoder, 
+                                                    DeformableDetrTransformerDecoder,
+                          DeformableDetrTransformerDecoderLayer,
+                          DeformableDetrTransformerEncoder,
+                          DeformableDetrTransformerEncoderLayer,
+                          )
 from .res_layer import ResLayer, SimplifiedBasicBlock
 from .bbox_nms import fast_nms, multiclass_nms
 
@@ -37,5 +42,7 @@ __all__ = [
     "inverse_sigmoid", "nchw_to_nlc", "nlc_to_nchw",
     "ResLayer", "SimplifiedBasicBlock", 'Mask2FormerTransformerDecoder', 
     'Mask2FormerTransformerDecoderLayer', 'Mask2FormerTransformerEncoder', 'CdnQueryGenerator',
-    'DinoTransformerDecoder', 'fast_nms', 'multiclass_nms'
+    'DinoTransformerDecoder', 'fast_nms', 'multiclass_nms', 'DeformableDetrTransformerDecoder',
+    'DeformableDetrTransformerDecoderLayer', 'DeformableDetrTransformerEncoder',
+    'DeformableDetrTransformerEncoderLayer'
 ]

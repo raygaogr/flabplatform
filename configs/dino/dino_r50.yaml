@@ -1,0 +1,213 @@
+_base_: 
+  - "../../flabplatform/flabdet/configs/_base_/default_runtime.yaml"
+  - "../../flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml"
+
+model:
+  type: 'DINO'
+  num_queries: 900 
+  with_box_refine: true
+  as_two_stage: true
+  data_preprocessor:
+    type: 'DetDataPreprocessor'
+    mean: [123.675, 116.28, 103.53]
+    std: [58.395, 57.12, 57.375]
+    bgr_to_rgb: true
+    pad_size_divisor: 1
+  backbone:
+    type: 'ResNet'
+    depth: 50
+    num_stages: 4
+    out_indices: [1, 2, 3]
+    frozen_stages: 1
+    norm_cfg:
+      type: 'BN'
+      requires_grad: false
+    norm_eval: true
+    style: 'pytorch'
+    init_cfg:
+      type: 'Pretrained'
+      checkpoint: 'torchvision://resnet50'
+  neck:
+    type: 'ChannelMapper'
+    in_channels: [512, 1024, 2048]
+    kernel_size: 1
+    out_channels: 256
+    act_cfg: null
+    norm_cfg:
+      type: 'GN'
+      num_groups: 32
+    num_outs: 4
+  encoder:
+    num_layers: 6
+    layer_cfg:
+      self_attn_cfg:
+        embed_dims: 256
+        num_levels: 4
+        dropout: 0.0  # 0.1 for DeformDETR
+      ffn_cfg:
+        embed_dims: 256
+        feedforward_channels: 2048  # 1024 for DeformDETR
+        ffn_drop: 0.0  # 0.1 for DeformDETR
+  decoder:
+    num_layers: 6
+    return_intermediate: true
+    layer_cfg:
+      self_attn_cfg:
+        embed_dims: 256
+        num_heads: 8
+        dropout: 0.0  # 0.1 for DeformDETR
+      cross_attn_cfg:
+        embed_dims: 256
+        num_levels: 4
+        dropout: 0.0  # 0.1 for DeformDETR
+      ffn_cfg:
+        embed_dims: 256
+        feedforward_channels: 2048  # 1024 for DeformDETR
+        ffn_drop: 0.0  # 0.1 for DeformDETR
+    post_norm_cfg: null
+  positional_encoding:
+    num_feats: 128
+    normalize: true
+    offset: 0.0  # -0.5 for DeformDETR
+    temperature: 20  # 10000 for DeformDETR
+  bbox_head:
+    type: 'DINOHead'
+    num_classes: 80
+    sync_cls_avg_factor: true
+    loss_cls:
+      type: 'FocalLoss'
+      use_sigmoid: true
+      gamma: 2.0
+      alpha: 0.25
+      loss_weight: 1.0  # 2.0 in DeformDETR
+    loss_bbox:
+      type: 'L1Loss'
+      loss_weight: 5.0
+    loss_iou:
+      type: 'GIoULoss'
+      loss_weight: 2.0
+  dn_cfg:  # TODO: Move to model.train_cfg ?
+    label_noise_scale: 0.5
+    box_noise_scale: 1.0  # 0.4 for DN-DETR
+    group_cfg:
+      dynamic: true
+      num_groups: null
+      num_dn_queries: 100  # TODO: half num_dn_queries
+  # training and testing settings
+  train_cfg:
+    assigner:
+      type: 'HungarianAssigner'
+      match_costs:
+        - type: 'FocalLossCost'
+          weight: 2.0
+        - type: 'BBoxL1Cost'
+          weight: 5.0
+          box_format: 'xywh'
+        - type: 'IoUCost'
+          iou_mode: 'giou'
+          weight: 2.0
+  test_cfg:
+    max_per_img: 300  # 100 for DeformDETR
+
+# train_pipeline, NOTE the img_scale and the Pad's size_divisor is different
+# from the default setting in mmdet.
+train_pipeline: &_train_pipeline
+  - type: 'LoadImageFromFile'
+    backend_args: {{_base_.backend_args}}
+  - type: 'LoadAnnotations'
+    with_bbox: true
+  - type: 'RandomFlip'
+    prob: 0.5
+  - type: 'RandomChoice'
+    transforms:
+      - - type: 'RandomChoiceResize'
+          scales: [
+                  !!python/tuple [480, 1333], 
+                  !!python/tuple [512, 1333], 
+                  !!python/tuple [544, 1333], 
+                  !!python/tuple [576, 1333],
+                  !!python/tuple [608, 1333], 
+                  !!python/tuple [640, 1333], 
+                  !!python/tuple [672, 1333], 
+                  !!python/tuple [704, 1333],
+                  !!python/tuple [736, 1333], 
+                  !!python/tuple [768, 1333], 
+                  !!python/tuple [800, 1333]
+                ]
+          keep_ratio: true
+      - - type: 'RandomChoiceResize'
+          # The radio of all image in train dataset < 7
+          # follow the original implement
+          scales: [
+            !!python/tuple [400, 4200], 
+            !!python/tuple [500, 4200], 
+            !!python/tuple [600, 4200]
+            ]
+          keep_ratio: true
+        - type: 'RandomCrop'
+          crop_type: 'absolute_range'
+          crop_size: !!python/tuple [384, 600] 
+          allow_negative_crop: true
+        - type: 'RandomChoiceResize'
+          scales: [
+            !!python/tuple [480, 1333], 
+            !!python/tuple [512, 1333], 
+            !!python/tuple [544, 1333], 
+            !!python/tuple [576, 1333],
+            !!python/tuple [608, 1333], 
+            !!python/tuple [640, 1333], 
+            !!python/tuple [672, 1333], 
+            !!python/tuple [704, 1333],
+            !!python/tuple [736, 1333], 
+            !!python/tuple [768, 1333], 
+            !!python/tuple [800, 1333]]
+          keep_ratio: true
+  - type: 'PackDetInputs'
+
+train_dataloader:
+  dataset:
+    filter_cfg:
+      filter_empty_gt: false
+    pipeline: *_train_pipeline
+
+# optimizer
+optim_wrapper:
+  type: 'OptimWrapper'
+  optimizer:
+    type: 'AdamW'
+    lr: 0.0001  # 0.0002 for DeformDETR
+    weight_decay: 0.0001
+  clip_grad:
+    max_norm: 0.1
+    norm_type: 2
+  paramwise_cfg:
+    custom_keys:
+      backbone:
+        lr_mult: 0.1
+
+# learning policy
+max_epochs: &max_epochs 12
+train_cfg:
+  type: 'EpochBasedTrainLoop'
+  max_epochs: *max_epochs
+  val_interval: 1
+
+val_cfg:
+  type: 'ValLoop'
+
+test_cfg:
+  type: 'TestLoop'
+
+param_scheduler:
+  - type: 'MultiStepLR'
+    begin: 0
+    end: *max_epochs
+    by_epoch: true
+    milestones: [11]
+    gamma: 0.1
+
+# NOTE: `auto_scale_lr` is for automatically scaling LR,
+# USER SHOULD NOT CHANGE ITS VALUES.
+# base_batch_size = (8 GPUs) x (2 samples per GPU)
+auto_scale_lr:
+  base_batch_size: 2

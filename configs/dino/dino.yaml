@@ -1,0 +1,10 @@
+_base_: [
+  './dino_r50.yaml'
+]
+
+
+training:
+    algoParams: 
+        device: 0
+        model: 
+          type: 'DINO'
