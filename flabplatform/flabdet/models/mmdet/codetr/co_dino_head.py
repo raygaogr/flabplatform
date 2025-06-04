@@ -5,20 +5,20 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import Linear
-from mmcv.ops import batched_nms
+from flabplatform.flabcv.cnn import Linear
+from flabplatform.flabcv.ops import batched_nms
 from mmengine.structures import InstanceData
 from torch import Tensor
 
-from mmdet.models import DINOHead
-from mmdet.models.layers import CdnQueryGenerator
-from mmdet.models.layers.transformer import inverse_sigmoid
-from mmdet.models.utils import multi_apply
-from mmdet.registry import MODELS
-from mmdet.structures import SampleList
-from mmdet.structures.bbox import (bbox_cxcywh_to_xyxy, bbox_overlaps,
+from flabplatform.flabdet.models import DINOHead
+from flabplatform.flabdet.models.mmdet.layers import CdnQueryGenerator
+from flabplatform.flabdet.models.mmdet.layers.transformer import inverse_sigmoid
+from flabplatform.flabdet.models.mmdet.utils import multi_apply
+from flabplatform.flabdet.registry import MODELS
+from flabplatform.flabdet.utils.mmdet.structures import SampleList
+from flabplatform.flabdet.utils.mmdet.structures.bbox import (bbox_cxcywh_to_xyxy, bbox_overlaps,
                                    bbox_xyxy_to_cxcywh)
-from mmdet.utils import InstanceList, reduce_mean
+from flabplatform.flabdet.utils import InstanceList, reduce_mean
 
 
 @MODELS.register_module()

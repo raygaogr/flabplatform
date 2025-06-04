@@ -15,8 +15,10 @@ from .transformer import (MLP, AdaptivePadding,
                           inverse_sigmoid, nchw_to_nlc, nlc_to_nchw,
                           Mask2FormerTransformerDecoder,
                           Mask2FormerTransformerDecoderLayer,
-                          Mask2FormerTransformerEncoder)
+                          Mask2FormerTransformerEncoder, 
+                          CdnQueryGenerator, DinoTransformerDecoder)
 from .res_layer import ResLayer, SimplifiedBasicBlock
+from .bbox_nms import fast_nms, multiclass_nms
 
 __all__ = [
     'LearnedPositionalEncoding',
@@ -34,5 +36,6 @@ __all__ = [
     "PatchMerging", "coordinate_to_encoding",
     "inverse_sigmoid", "nchw_to_nlc", "nlc_to_nchw",
     "ResLayer", "SimplifiedBasicBlock", 'Mask2FormerTransformerDecoder', 
-    'Mask2FormerTransformerDecoderLayer', 'Mask2FormerTransformerEncoder'
+    'Mask2FormerTransformerDecoderLayer', 'Mask2FormerTransformerEncoder', 'CdnQueryGenerator',
+    'DinoTransformerDecoder', 'fast_nms', 'multiclass_nms'
 ]

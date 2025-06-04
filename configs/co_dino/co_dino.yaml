@@ -3,10 +3,8 @@ _base_: [
 ]
 
 
-model: &_model
-    type: 'DABDETR'
-
 training:
     algoParams: 
         device: 0
-        model: *_model
+        model: 
+          type: 'CoDETR'

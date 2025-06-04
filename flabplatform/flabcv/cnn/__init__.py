@@ -1,4 +1,4 @@
-from .bricks import (Conv2d, Conv3d, ConvModule,
+from .bricks import (Conv2d, Conv3d, ConvModule, Scale,
                      ConvTranspose2d, ConvTranspose3d, 
                      DepthwiseSeparableConvModule, 
                      Linear, MaxPool2d, MaxPool3d,
@@ -11,4 +11,5 @@ __all__ = [
     'ConvModule', 'Linear', 'build_plugin_layer', 'Conv2d', 'Conv3d',
     'ConvTranspose2d', 'ConvTranspose3d', 'MaxPool2d', 'MaxPool3d',
     'DepthwiseSeparableConvModule', 'is_norm', 'build_padding_layer',
+    'Scale'
 ]

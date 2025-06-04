@@ -3,7 +3,7 @@ _base_:
   - "../../flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml"
 
 custom_imports:
-  imports: ['projects.CO-DETR.codetr']
+  imports: ['flabplatform.flabdet.models.mmdet.codetr']
   allow_failed_imports: false
 
 # model settings
@@ -15,7 +15,7 @@ image_size: [1024, 1024]
 batch_augments: &_batch_augments
   - type: 'BatchFixedSizePad'
     size: [1024, 1024]
-    pad_mask: true
+    pad_mask: false
 
 model:
   type: 'CoDETR'
@@ -285,16 +285,16 @@ model:
 
 train_pipeline: &_train_pipeline
   - type: 'LoadImageFromFile'
+    backend_args: {{_base_.backend_args}}
   - type: 'LoadAnnotations'
     with_bbox: true
-    with_mask: false
   - type: 'RandomFlip'
     prob: 0.5
   - type: 'RandomChoice'
     transforms:
       - - type: 'Resize'
           scale: [1024, 1024]
-          keep_ratio: false
+          keep_ratio: true
   - type: "PackDetInputs"
 
 train_dataloader:
@@ -306,9 +306,9 @@ train_dataloader:
 
 test_pipeline: &_test_pipeline
   - type: 'LoadImageFromFile'
+    backend_args: {{_base_.backend_args}}
   - type: 'LoadAnnotations'
     with_bbox: true
-    with_mask: false
   - type: 'RandomChoice'
     transforms:
       - - type: 'Resize'

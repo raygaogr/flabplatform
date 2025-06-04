@@ -135,7 +135,6 @@ class MaxPool2d(nn.MaxPool2d):
 
 
 class MaxPool3d(nn.MaxPool3d):
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # PyTorch 1.9 does not support empty tensor inference yet
         if obsolete_torch_version(TORCH_VERSION, (1, 9)) and x.numel() == 0:
@@ -152,7 +151,7 @@ class MaxPool3d(nn.MaxPool3d):
 
         return super().forward(x)
 
-
+@MODELS.register_module()
 class Linear(torch.nn.Linear):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

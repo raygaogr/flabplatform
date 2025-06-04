@@ -4,8 +4,6 @@ import os.path as osp
 
 
 def merge_args(cfg, args):
-    cfg.launcher = None
-
     # if args.work_dir is not None:
     #     cfg.work_dir = args.work_dir
     # elif cfg.get('work_dir', None) is None:

@@ -26,7 +26,7 @@ from flabplatform.core.registry import \
 from flabplatform.core.registry import Registry
 
 __all__ = [
-    'RUNNERS', 'RUNNER_CONSTRUCTORS',  'HOOKS', 'LOG_PROCESSORS',
+    'RUNNERS', 'RUNNER_CONSTRUCTORS',  'HOOKS',
     'DATASETS', 'DATA_SAMPLERS', 'MODELS',
     'MODEL_WRAPPERS', 'WEIGHT_INITIALIZERS', 'BATCH_AUGMENTS', 'TASK_UTILS',
     'METRICS', 'EVALUATORS', 'VISUALIZERS', 'VISBACKENDS'
@@ -77,13 +77,13 @@ HOOKS = Registry(
     scope='flabplatform.flabdet',
     locations=['flabplatform.flabdet.utils.mmdet.hooks'],
 )
-# 日志处理器，用于处理标量日志数据
-LOG_PROCESSORS = Registry(
-    'log processor',
-    scope='flabplatform.flabdet',
-    parent=ROOT_LOG_PROCESSORS,
-    locations=['flabplatform.flabdet.engine'],
-)
+# # 日志处理器，用于处理标量日志数据
+# LOG_PROCESSORS = Registry(
+#     'log processor',
+#     scope='flabplatform.flabdet',
+#     parent=ROOT_LOG_PROCESSORS,
+#     locations=['flabplatform.flabdet.engine'],
+# )
 # # 优化器，用于优化模型权重，如`SGD`和`Adam`
 # OPTIMIZERS = Registry(
 #     'optimizer',

@@ -8,10 +8,12 @@ from .wrappers import (Conv2d, Conv3d, ConvTranspose2d, ConvTranspose3d,
                        Linear, MaxPool2d, MaxPool3d)
 from .plugin import build_plugin_layer
 from .depthwise_separable_conv_module import DepthwiseSeparableConvModule
-
+from .scale import LayerScale, Scale
+from .upsample import build_upsample_layer
 __all__ = [
     'ConvModule', 'build_activation_layer', 'build_conv_layer',
     'build_norm_layer', 'build_padding_layer', 'is_norm', 'Dropout', 'DropPath',
     'Conv2d', 'Conv3d', 'ConvTranspose2d', 'ConvTranspose3d', 'Linear',
-    'MaxPool2d', 'MaxPool3d', 'build_plugin_layer', "DepthwiseSeparableConvModule"
+    'MaxPool2d', 'MaxPool3d', 'build_plugin_layer', "DepthwiseSeparableConvModule",
+    'LayerScale', 'Scale', 'build_upsample_layer'
 ]
