@@ -1,0 +1,371 @@
+_base_:
+  - "../../flabplatform/flabdet/configs/_base_/default_runtime.yaml"
+  - "../../flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml"
+
+custom_imports:
+  imports: ['projects.CO-DETR.codetr']
+  allow_failed_imports: false
+
+# model settings
+# num_dec_layer: &_num_dec_layer 6
+# loss_lambda: &_loss_lambda 2.0
+num_classes: &_num_classes 80
+
+image_size: [1024, 1024]
+batch_augments: &_batch_augments
+  - type: 'BatchFixedSizePad'
+    size: [1024, 1024]
+    pad_mask: true
+
+model:
+  type: 'CoDETR'
+  use_lsj: false
+  eval_module: 'detr'  # in ['detr', 'one-stage', 'two-stage']
+  data_preprocessor:
+    type: 'DetDataPreprocessor'
+    mean: [123.675, 116.28, 103.53]
+    std: [58.395, 57.12, 57.375]
+    bgr_to_rgb: true
+    pad_mask: true
+    batch_augments: *_batch_augments
+  backbone:
+    type: 'ResNet'
+    depth: 50
+    num_stages: 4
+    out_indices: [0, 1, 2, 3]
+    frozen_stages: 1
+    norm_cfg:
+      type: 'BN'
+      requires_grad: false
+    norm_eval: true
+    style: 'pytorch'
+    init_cfg:
+      type: 'Pretrained'
+      checkpoint: 'torchvision://resnet50'
+  neck:
+    type: 'ChannelMapper'
+    in_channels: [256, 512, 1024, 2048]
+    kernel_size: 1
+    out_channels: 256
+    act_cfg: null
+    norm_cfg:
+      type: 'GN'
+      num_groups: 32
+    num_outs: 5
+  query_head:
+    type: 'CoDINOHead'
+    num_query: 900
+    num_classes: *_num_classes
+    in_channels: 2048
+    as_two_stage: true
+    dn_cfg:
+      label_noise_scale: 0.5
+      box_noise_scale: 1.0
+      group_cfg:
+        dynamic: true
+        num_groups: null
+        num_dn_queries: 100
+    transformer:
+      type: 'CoDinoTransformer'
+      with_coord_feat: false
+      num_co_heads: 2  # ATSS Aux Head + Faster RCNN Aux Head
+      num_feature_levels: 5
+      encoder:
+        type: 'DetrTransformerEncoder'
+        num_layers: 6
+        with_cp: 4
+        transformerlayers:
+          type: 'BaseTransformerLayer'
+          attn_cfgs:
+            type: 'MultiScaleDeformableAttention'
+            embed_dims: 256
+            num_levels: 5
+            dropout: 0.0
+          feedforward_channels: 2048
+          ffn_dropout: 0.0
+          operation_order: ['self_attn', 'norm', 'ffn', 'norm']
+      decoder:
+        type: 'DinoTransformerDecoder'
+        num_layers: 6
+        return_intermediate: true
+        transformerlayers:
+          type: 'DetrTransformerDecoderLayer'
+          attn_cfgs:
+            - type: 'MultiheadAttention'
+              embed_dims: 256
+              num_heads: 8
+              dropout: 0.0
+            - type: 'MultiScaleDeformableAttention'
+              embed_dims: 256
+              num_levels: 5
+              dropout: 0.0
+          feedforward_channels: 2048
+          ffn_dropout: 0.0
+          operation_order: ['self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm']
+    positional_encoding:
+      type: 'SinePositionalEncoding'
+      num_feats: 128
+      temperature: 20
+      normalize: true
+    loss_cls:
+      type: 'QualityFocalLoss'
+      use_sigmoid: true
+      beta: 2.0
+      loss_weight: 1.0
+    loss_bbox:
+      type: 'L1Loss'
+      loss_weight: 5.0
+    loss_iou:
+      type: 'GIoULoss'
+      loss_weight: 2.0
+  rpn_head:
+    type: 'RPNHead'
+    in_channels: 256
+    feat_channels: 256
+    anchor_generator:
+      type: 'AnchorGenerator'
+      octave_base_scale: 4
+      scales_per_octave: 3
+      ratios: [0.5, 1.0, 2.0]
+      strides: [4, 8, 16, 32, 64, 128]
+    bbox_coder:
+      type: 'DeltaXYWHBBoxCoder'
+      target_means: [0.0, 0.0, 0.0, 0.0]
+      target_stds: [1.0, 1.0, 1.0, 1.0]
+    loss_cls:
+      type: 'CrossEntropyLoss'
+      use_sigmoid: true
+      loss_weight: 12.0
+    loss_bbox:
+      type: 'L1Loss'
+      loss_weight: 12.0
+  roi_head:
+    - type: 'CoStandardRoIHead'
+      bbox_roi_extractor:
+        type: 'SingleRoIExtractor'
+        roi_layer:
+          type: 'RoIAlign'
+          output_size: 7
+          sampling_ratio: 0
+        out_channels: 256
+        featmap_strides: [4, 8, 16, 32, 64]
+        finest_scale: 56
+      bbox_head:
+        type: 'Shared2FCBBoxHead'
+        in_channels: 256
+        fc_out_channels: 1024
+        roi_feat_size: 7
+        num_classes: *_num_classes
+        bbox_coder:
+          type: 'DeltaXYWHBBoxCoder'
+          target_means: [0.0, 0.0, 0.0, 0.0]
+          target_stds: [0.1, 0.1, 0.2, 0.2]
+        reg_class_agnostic: false
+        reg_decoded_bbox: true
+        loss_cls:
+          type: 'CrossEntropyLoss'
+          use_sigmoid: false
+          loss_weight: 12.0
+        loss_bbox:
+          type: 'GIoULoss'
+          loss_weight: 120.0
+  bbox_head:
+    - type: 'CoATSSHead'
+      num_classes: *_num_classes
+      in_channels: 256
+      stacked_convs: 1
+      feat_channels: 256
+      anchor_generator:
+        type: 'AnchorGenerator'
+        ratios: [1.0]
+        octave_base_scale: 8
+        scales_per_octave: 1
+        strides: [4, 8, 16, 32, 64, 128]
+      bbox_coder:
+        type: 'DeltaXYWHBBoxCoder'
+        target_means: [0.0, 0.0, 0.0, 0.0]
+        target_stds: [0.1, 0.1, 0.2, 0.2]
+      loss_cls:
+        type: 'FocalLoss'
+        use_sigmoid: true
+        gamma: 2.0
+        alpha: 0.25
+        loss_weight: 12.0
+      loss_bbox:
+        type: 'GIoULoss'
+        loss_weight: 24.0
+      loss_centerness:
+        type: 'CrossEntropyLoss'
+        use_sigmoid: true
+        loss_weight: 12.0
+  # model training and testing settings
+  train_cfg:
+    - assigner:
+        type: 'HungarianAssigner'
+        match_costs:
+          - type: 'FocalLossCost'
+            weight: 2.0
+          - type: 'BBoxL1Cost'
+            weight: 5.0
+            box_format: 'xywh'
+          - type: 'IoUCost'
+            iou_mode: 'giou'
+            weight: 2.0
+    - rpn:
+        assigner:
+          type: 'MaxIoUAssigner'
+          pos_iou_thr: 0.7
+          neg_iou_thr: 0.3
+          min_pos_iou: 0.3
+          match_low_quality: true
+          ignore_iof_thr: -1
+        sampler:
+          type: 'RandomSampler'
+          num: 256
+          pos_fraction: 0.5
+          neg_pos_ub: -1
+          add_gt_as_proposals: false
+        allowed_border: -1
+        pos_weight: -1
+        debug: false
+      rpn_proposal:
+        nms_pre: 4000
+        max_per_img: 1000
+        nms:
+          type: 'nms'
+          iou_threshold: 0.7
+        min_bbox_size: 0
+      rcnn:
+        assigner:
+          type: 'MaxIoUAssigner'
+          pos_iou_thr: 0.5
+          neg_iou_thr: 0.5
+          min_pos_iou: 0.5
+          match_low_quality: false
+          ignore_iof_thr: -1
+        sampler:
+          type: 'RandomSampler'
+          num: 512
+          pos_fraction: 0.25
+          neg_pos_ub: -1
+          add_gt_as_proposals: true
+        pos_weight: -1
+        debug: false
+    - assigner:
+        type: 'ATSSAssigner'
+        topk: 9
+      allowed_border: -1
+      pos_weight: -1
+      debug: false
+  test_cfg:
+    - max_per_img: 300
+      nms:
+        type: 'soft_nms'
+        iou_threshold: 0.8
+    - rpn:
+        nms_pre: 1000
+        max_per_img: 1000
+        nms:
+          type: 'nms'
+          iou_threshold: 0.7
+        min_bbox_size: 0
+      rcnn:
+        score_thr: 0.0
+        nms:
+          type: 'nms'
+          iou_threshold: 0.5
+        max_per_img: 100
+    - nms_pre: 1000
+      min_bbox_size: 0
+      score_thr: 0.0
+      nms:
+        type: 'nms'
+        iou_threshold: 0.6
+      max_per_img: 100
+
+train_pipeline: &_train_pipeline
+  - type: 'LoadImageFromFile'
+  - type: 'LoadAnnotations'
+    with_bbox: true
+    with_mask: false
+  - type: 'RandomFlip'
+    prob: 0.5
+  - type: 'RandomChoice'
+    transforms:
+      - - type: 'Resize'
+          scale: [1024, 1024]
+          keep_ratio: false
+  - type: "PackDetInputs"
+
+train_dataloader:
+  dataset:
+    pipeline: *_train_pipeline
+    filter_cfg:
+      filter_empty_gt: false
+      min_size: 0
+
+test_pipeline: &_test_pipeline
+  - type: 'LoadImageFromFile'
+  - type: 'LoadAnnotations'
+    with_bbox: true
+    with_mask: false
+  - type: 'RandomChoice'
+    transforms:
+      - - type: 'Resize'
+          scale: [1024, 1024]
+          keep_ratio: true
+  - type: 'PackDetInputs'
+
+val_dataloader: &_val_dataloader
+  dataset:
+    filter_cfg:
+      filter_empty_gt: false
+      min_size: 0
+    pipeline: *_test_pipeline
+
+test_dataloader: *_val_dataloader
+
+optim_wrapper:
+  type: 'OptimWrapper'
+  optimizer:
+    type: 'AdamW'
+    lr: 0.0001
+    weight_decay: 0.0001
+  clip_grad:
+    max_norm: 0.1
+    norm_type: 2
+  paramwise_cfg:
+    custom_keys:
+      backbone:
+        lr_mult: 0.1
+        decay_mult: 1.0
+
+max_epochs: &_max_epochs 10
+train_cfg:
+  type: 'EpochBasedTrainLoop'
+  max_epochs: *_max_epochs
+  val_interval: 1
+val_cfg:
+  type: 'ValLoop'
+test_cfg:
+  type: 'TestLoop'
+
+default_hooks:
+  checkpoint:
+    type: 'CheckpointHook'
+    interval: 1
+    max_keep_ckpts: 2
+
+param_scheduler:
+  - type: 'MultiStepLR'
+    begin: 0
+    end: *_max_epochs
+    by_epoch: true
+    milestones: [5]
+    gamma: 0.1
+
+# NOTE: `auto_scale_lr` is for automatically scaling LR,
+# USER SHOULD NOT CHANGE ITS VALUES.
+# base_batch_size = (8 GPUs) x (2 samples per GPU)
+auto_scale_lr:
+  base_batch_size: 4

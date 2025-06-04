@@ -1,0 +1,12 @@
+_base_: [
+  './co_dino_r50.yaml'
+]
+
+
+model: &_model
+    type: 'DABDETR'
+
+training:
+    algoParams: 
+        device: 0
+        model: *_model

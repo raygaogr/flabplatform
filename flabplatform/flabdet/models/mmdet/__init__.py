@@ -7,3 +7,5 @@ from .dense_heads import *
 from .losses import *
 from .utils import *
 from .task_modules import *
+from .test_time_augs import *
+from .roi_heads import *

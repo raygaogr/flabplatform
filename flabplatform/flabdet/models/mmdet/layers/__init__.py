@@ -12,7 +12,10 @@ from .transformer import (MLP, AdaptivePadding,
                           DynamicConv,
                           PatchEmbed,
                           PatchMerging, coordinate_to_encoding,
-                          inverse_sigmoid, nchw_to_nlc, nlc_to_nchw)
+                          inverse_sigmoid, nchw_to_nlc, nlc_to_nchw,
+                          Mask2FormerTransformerDecoder,
+                          Mask2FormerTransformerDecoderLayer,
+                          Mask2FormerTransformerEncoder)
 from .res_layer import ResLayer, SimplifiedBasicBlock
 
 __all__ = [
@@ -30,5 +33,6 @@ __all__ = [
     "PatchEmbed",
     "PatchMerging", "coordinate_to_encoding",
     "inverse_sigmoid", "nchw_to_nlc", "nlc_to_nchw",
-    "ResLayer", "SimplifiedBasicBlock"
+    "ResLayer", "SimplifiedBasicBlock", 'Mask2FormerTransformerDecoder', 
+    'Mask2FormerTransformerDecoderLayer', 'Mask2FormerTransformerEncoder'
 ]
