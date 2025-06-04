@@ -27,11 +27,11 @@ class LoadImageFromFile(BaseTransform):
         to_float32 (bool): Whether to convert the loaded image to a float32
             numpy array. If set to False, the loaded image is an uint8 array.
             Defaults to False.
-        color_type (str): The flag argument for :func:`mmcv.imfrombytes`.
+        color_type (str): The flag argument for :func:`flabplatform.flabcv.imfrombytes`.
             Defaults to 'color'.
         imdecode_backend (str): The image decoding backend type. The backend
-            argument for :func:`mmcv.imfrombytes`.
-            See :func:`mmcv.imfrombytes` for details.
+            argument for :func:`flabplatform.flabcv.imfrombytes`.
+            See :func:`flabplatform.flabcv.imfrombytes` for details.
             Defaults to 'cv2'.
         file_client_args (dict, optional): Arguments to instantiate a
             FileClient. See :class:`mmengine.fileio.FileClient` for details.
@@ -204,8 +204,8 @@ class LoadAnnotations(BaseTransform):
         with_keypoints (bool): Whether to parse and load the keypoints
             annotation. Defaults to False.
         imdecode_backend (str): The image decoding backend type. The backend
-            argument for :func:`mmcv.imfrombytes`.
-            See :func:`mmcv.imfrombytes` for details.
+            argument for :func:`flabplatform.flabcv.imfrombytes`.
+            See :func:`flabplatform.flabcv.imfrombytes` for details.
             Defaults to 'cv2'.
         file_client_args (dict, optional): Arguments to instantiate a
             FileClient. See :class:`mmengine.fileio.FileClient` for details.

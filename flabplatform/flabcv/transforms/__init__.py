@@ -12,8 +12,7 @@ __all__ = [
     'BaseTransform', 'TRANSFORMS', 'RandomFlip',
     'LoadAnnotations', 'LoadImageFromFile',
     'Compose', 'KeyMapper', 'RandomApply', 'RandomChoice',
-    'TransformBroadcaster', 'Resize', 'RandomResize', 'CenterCrop',
-    'Pad', 'Normalize', 'RandomGrayscale', 'MultiScaleFlipAug',
-    'TestTimeAug', 'RandomChoiceResize', 'ImageToTensor', 'ToTensor', 'to_tensor'
-    ]
-
+    'TransformBroadcaster', 'CenterCrop', 'MultiScaleFlipAug',
+    'Normalize', 'Pad', 'RandomChoiceResize', 'RandomGrayscale', 'RandomResize',
+    'Resize', 'TestTimeAug', 'ImageToTensor', 'ToTensor', 'to_tensor',
+]

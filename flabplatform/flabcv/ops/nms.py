@@ -313,7 +313,7 @@ def batched_nms(boxes: Tensor,
         max_num = nms_cfg_.pop('max_num', -1)
         total_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
         # Some type of nms would reweight the score, such as SoftNMS
-        scores_after_nms = scores.new_zeros(scores.size())
+        scores_after_nms = scores.new_zeros(scores.size(), dtype=torch.float32)
         for id in torch.unique(idxs):
             mask = (idxs == id).nonzero(as_tuple=False).view(-1)
             dets, keep = nms_op(boxes_for_nms[mask], scores[mask], **nms_cfg_)

@@ -618,5 +618,13 @@
             "segmentation": [],
             "iscrowd": 0
         }
-    ]
+    ],
+    "info":{
+        "description": "COCO 2017 Dataset",
+        "url": "http://cocodataset.org",
+        "version": "1.0",
+        "year": 2017,
+        "contributor": "COCO Consortium",
+        "date_created": "2017/09/01"
+    }
 }

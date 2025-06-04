@@ -23,7 +23,7 @@ train_pipeline: &_train_pipeline
     - type: 'LoadAnnotations'
       with_bbox: true
     - type: 'Resize'
-      scale: [1333, 800]
+      scale: !!python/tuple [1333, 800]
       keep_ratio: true
     - type: 'RandomFlip'
       prob: 0.5
@@ -33,7 +33,7 @@ test_pipeline: &_test_pipeline
     - type: 'LoadImageFromFile'
       backend_args: *_backend_args
     - type: 'Resize'
-      scale: [1333, 800]
+      scale: !!python/tuple [1333, 800]
       keep_ratio: true
     - type: 'LoadAnnotations'
       with_bbox: true
