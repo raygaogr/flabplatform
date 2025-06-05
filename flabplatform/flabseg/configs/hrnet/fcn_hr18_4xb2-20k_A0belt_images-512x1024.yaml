@@ -1,0 +1,17 @@
+_base_: 
+  - ../_base_/datasets/A0belt_images.yaml
+  - ../_base_/models/fcn_hr18.yaml
+  - ../_base_/default_runtime.yaml
+  - ../_base_/schedules/schedule_20k.yaml
+
+
+crop_size: &crop_size  [512, 1024]
+
+data_preprocessor: &data_preprocessor
+  type: SegDataPreProcessor
+  size: *crop_size
+
+model:
+  data_preprocessor: *data_preprocessor
+  decode_head:
+    num_classes: 6

@@ -1,0 +1,54 @@
+# optimizer
+optimizer:
+  type: SGD
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+
+optim_wrapper:
+  type: OptimWrapper
+  optimizer: 
+    type: SGD
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+  clip_grad: null
+
+# learning policy
+param_scheduler:
+  - type: PolyLR
+    eta_min: 1.0e-4
+    power: 0.9
+    begin: 0
+    end: 20000
+    by_epoch: false
+
+# training schedule for 20k
+train_cfg:
+  type: IterBasedTrainLoop
+  max_iters: 20000
+  val_interval: 2000
+
+val_cfg:
+  type: ValLoop
+
+test_cfg:
+  type: TestLoop
+
+default_hooks:
+  timer:
+    type: IterTimerHook
+  logger:
+    type: LoggerHook
+    interval: 50
+    log_metric_by_epoch: false
+  param_scheduler:
+    type: ParamSchedulerHook
+  checkpoint:
+    type: CheckpointHook
+    by_epoch: false
+    interval: 50
+  sampler_seed:
+    type: DistSamplerSeedHook
+  visualization:
+    type: SegVisualizationHook

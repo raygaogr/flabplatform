@@ -1,0 +1,30 @@
+default_scope: 'flabplatform.flabseg'
+
+env_cfg:
+  cudnn_benchmark: true
+  mp_cfg:
+    mp_start_method: fork
+    opencv_num_threads: 0
+  dist_cfg:
+    backend: nccl
+
+vis_backends:
+  - type: LocalVisBackend
+
+visualizer:
+  type: SegLocalVisualizer
+  vis_backends: 
+    - type: LocalVisBackend
+  name: visualizer
+
+log_processor:
+  by_epoch: false
+
+log_level: INFO
+
+load_from: null
+
+resume: false
+
+tta_model:
+  type: SegTTAModel

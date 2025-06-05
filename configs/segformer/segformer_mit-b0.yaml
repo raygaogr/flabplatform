@@ -1,0 +1,13 @@
+_base_: [
+    '../../flabplatform/flabseg/configs/segformer/segformer_mit-b0_8xb2-20k_A0belt_images-512x512.yaml'
+]
+
+model: &_model
+    type: EncoderDecoder
+    decode_head:
+        num_classes: 6
+
+training:
+    algoParams: 
+        device: 0
+        model: *_model

@@ -1,0 +1,40 @@
+_base_:
+  - ../_base_/datasets/A0belt_images.yaml
+  - ../_base_/models/fcn_hr18.yaml
+  - ../_base_/default_runtime.yaml
+  - ../_base_/schedules/schedule_20k.yaml
+
+crop_size: &crop_size [512, 1024]
+
+data_preprocessor: &data_preprocessor
+  type: SegDataPreProcessor
+  size: *crop_size
+
+model:
+  data_preprocessor: *data_preprocessor
+  pretrained: models/hrnetv2_w48.pth
+  backbone:
+    extra:
+      stage2:
+        num_channels:
+          - 48
+          - 96
+      stage3:
+        num_channels:
+          - 48
+          - 96
+          - 192
+      stage4:
+        num_channels:
+          - 48
+          - 96
+          - 192
+          - 384
+  decode_head:
+    in_channels:
+      - 48
+      - 96
+      - 192
+      - 384
+    channels: 720
+    num_classes: 6

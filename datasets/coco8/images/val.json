@@ -674,6 +674,7 @@
             "segmentation": [],
             "iscrowd": 0
         }
+<<<<<<< HEAD
     ],
     "info":{
         "description": "COCO 2017 Dataset",

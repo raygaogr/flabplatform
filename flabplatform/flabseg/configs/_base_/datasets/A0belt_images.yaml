@@ -1,0 +1,121 @@
+# dataset settings
+dataset_type: &dataset_type A0belt_imagesDataset
+
+data_root: &data_root datasets/A0belt_images
+
+test_pipeline: &test_pipeline
+  - type: LoadImageFromFile
+  - type: Resize
+    scale: !!python/tuple [2048, 512]
+    keep_ratio: true
+  - type: LoadAnnotations
+  - type: PackSegInputs
+
+tta_pipeline:
+  - type: LoadImageFromFile
+    backend_args: null
+  - type: TestTimeAug
+    transforms:
+      - - type: Resize
+          scale_factor: 0.5
+          keep_ratio: true
+        - type: Resize
+          scale_factor: 0.75
+          keep_ratio: true
+        - type: Resize
+          scale_factor: 1.0
+          keep_ratio: true
+        - type: Resize
+          scale_factor: 1.25
+          keep_ratio: true
+        - type: Resize
+          scale_factor: 1.5
+          keep_ratio: true
+        - type: Resize
+          scale_factor: 1.75
+          keep_ratio: true
+      - - type: RandomFlip
+          prob: 0.0
+          direction: horizontal
+        - type: RandomFlip
+          prob: 1.0
+          direction: horizontal
+      - - type: LoadAnnotations
+      - - type: PackSegInputs
+
+train_dataloader:
+  batch_size: 4
+  num_workers: 4
+  persistent_workers: true
+  sampler:
+    type: InfiniteSampler
+    shuffle: true
+  dataset:
+    type: *dataset_type
+    data_root: *data_root
+    data_prefix:
+      img_path: JPEGImages
+      seg_map_path: SegmentationClass
+    ann_file: ImageSets/Segmentation/train.txt
+    pipeline:
+      - type: LoadImageFromFile
+      - type: LoadAnnotations
+      - type: RandomResize
+        scale: !!python/tuple [2048, 512]
+        ratio_range: [0.5, 2.0]
+        keep_ratio: true
+      - type: RandomCrop
+        crop_size: 512
+        cat_max_ratio: 0.75
+      - type: RandomFlip
+        prob: 0.5
+      - type: PhotoMetricDistortion
+      - type: PackSegInputs
+
+val_dataloader:
+  batch_size: 1
+  num_workers: 4
+  persistent_workers: true
+  sampler:
+    type: DefaultSampler
+    shuffle: false
+  dataset:
+    type: *dataset_type
+    data_root: *data_root
+    data_prefix:
+      img_path: JPEGImages
+      seg_map_path: SegmentationClass
+    ann_file: ImageSets/Segmentation/val.txt
+    pipeline: *test_pipeline
+
+test_dataloader:
+  batch_size: 1
+  num_workers: 4
+  persistent_workers: true
+  sampler:
+    type: DefaultSampler
+    shuffle: false
+  dataset:
+    type: *dataset_type
+    data_root: *data_root
+    data_prefix:
+      img_path: JPEGImages
+      seg_map_path: SegmentationClass
+    ann_file: ImageSets/Segmentation/val.txt
+    pipeline:
+      - type: LoadImageFromFile
+      - type: Resize
+        scale: !!python/tuple [2048, 512]
+        keep_ratio: true
+      # add loading annotation after Resize because ground truth
+      # does not need to do resize data transform
+      - type: LoadAnnotations
+      - type: PackSegInputs
+
+val_evaluator:
+  type: IoUMetric
+  iou_metrics: [mIoU]
+
+test_evaluator:
+  type: IoUMetric
+  iou_metrics: [mIoU]
