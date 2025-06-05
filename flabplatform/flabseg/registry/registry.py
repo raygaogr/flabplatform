@@ -44,8 +44,8 @@ HOOKS = Registry(
 # manage data-related modules
 DATASETS = Registry(
     'dataset', parent=ROOT_DATASETS, scope='flabplatform.flabseg', locations=['flabplatform.flabseg.datasets'])
-DATA_SAMPLERS = Registry('data sampler', parent=ROOT_DATA_SAMPLERS,
-                         scope='flabplatform.flabseg', locations=['flabplatform.flabseg.datasets.samplers'])
+# DATA_SAMPLERS = Registry('data sampler', parent=ROOT_DATA_SAMPLERS,
+#                          scope='flabplatform.flabseg', locations=['flabplatform.flabseg.datasets.samplers'])
 TRANSFORMS = Registry(
     'transform',
     parent=ROOT_TRANSFORMS,
