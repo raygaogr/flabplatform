@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from ultralytics.models.yolo.detect import DetectionValidator
+from flabplatform.flabdet.validation import DetectionValidator
 from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils import ops
 from flabplatform.flabdet.utils.yolos.checks import check_requirements

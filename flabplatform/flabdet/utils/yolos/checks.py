@@ -283,7 +283,7 @@ def check_font(font="Arial.ttf"):
 
     # Check USER_CONFIG_DIR
     name = Path(font).name
-    file = USER_CONFIG_DIR / name
+    file = ASSETS / Path("fonts").name / name
     if file.exists():
         return file
 
@@ -291,13 +291,6 @@ def check_font(font="Arial.ttf"):
     matches = [s for s in font_manager.findSystemFonts() if font in s]
     if any(matches):
         return matches[0]
-
-    # # Download to USER_CONFIG_DIR if missing
-    # url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{name}"
-    # if downloads.is_url(url, check=True):
-    #     downloads.safe_download(url=url, file=file)
-    #     return file
-
 
 def check_python(minimum: str = "3.8.0", hard: bool = True, verbose: bool = False) -> bool:
     """
@@ -728,9 +721,10 @@ def check_amp(model):
     LOGGER.info(f"{prefix}running Automatic Mixed Precision (AMP) checks...")
     warning_msg = "Setting 'amp=True'. If you experience zero-mAP or NaN losses you can disable AMP with amp=False."
     try:
-        from ultralytics import YOLO
+        from flabplatform.core import YOLORunnerWarpper
+        overrides = {"model": "yolo11n.pt", "amp": True, "device": device, "pretrainDir": "", "num_classes": 80 }  # overrides for YOLORunnerWarpper
 
-        assert amp_allclose(YOLO("yolo11n.pt"), im)
+        assert amp_allclose(YOLORunnerWarpper(overrides), im)
         LOGGER.info(f"{prefix}checks passed ✅")
     except ConnectionError:
         LOGGER.warning(

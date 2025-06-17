@@ -1,7 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 from ultralytics.data import YOLOConcatDataset, build_grounding, build_yolo_dataset
-from flabplatform.flabdet.datasets.utils  import check_det_dataset
+from flabplatform.flabdet.datasets.yolos.utils  import check_det_dataset
 from ultralytics.models.yolo.world import WorldTrainer
 from ultralytics.utils import DEFAULT_CFG
 from ultralytics.utils.torch_utils import de_parallel

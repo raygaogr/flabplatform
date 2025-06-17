@@ -127,11 +127,11 @@ class YOLORunner(BaseRunner):
         if not Path(model).suffix:
             model = model + ".yaml"
         __import__("os").environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # to avoid deterministic warnings
-        if Path(model).suffix in {".yaml", ".yml"} and not self.overrides["baseModelDir"]:
+        if Path(model).suffix in {".yaml", ".yml"} and not self.overrides["pretrainDir"]:
             self._new(model, task=self.task, verbose=verbose)
         else:
             if not model.endswith("pt"):
-                model = os.path.join(self.overrides["baseModelDir"], "best.pt")
+                model = os.path.join(self.overrides["pretrainDir"], "best.pt")
             self._load(model, task=self.task)
 
         # Delete super().training for accessing self.model.training
@@ -1121,10 +1121,6 @@ class YOLORunnerWarpper(YOLORunner):
 
     @classmethod
     def from_cfg(cls, cfg: Config):
-        datasets_dir = os.path.join(cfg.commonParams["datasets"]["rootDir"])
-        save_dir = cfg.commonParams["outputDir"]
-        SETTINGS.update(dict(datasets_dir=datasets_dir))
-        SETTINGS.update(dict(runs_dir=save_dir))
         cfg_dict = cfg.to_dict()
         special_keys = ["model", "optimizer"]
         ignore_keys = ["mqTopic", "rootDir", "type"] #TODO
@@ -1135,6 +1131,7 @@ class YOLORunnerWarpper(YOLORunner):
                     continue
                 elif k == "outputDir":
                     output_dict["save_dir"] = v
+                    SETTINGS.update(dict(runs_dir=v))
                 elif k == "operation":
                     if "training" in v:
                         output_dict["mode"] = "train"
@@ -1145,9 +1142,9 @@ class YOLORunnerWarpper(YOLORunner):
                 elif k == "metafile":
                     data_cfg = Config.fromfile(v)
                     output_dict["data"] = dict()
-                    output_dict["data"]["names"] = data_cfg["names"]
-                    output_dict["data"]["nc"] = cfg_dict["training"]["algoParams"]["model"]["num_classes"]
+                    output_dict["data"]["names"] = data_cfg["labels"]
                     output_dict["data"]["path"] = cfg_dict["commonParams"]["datasets"]["rootDir"]
+                    SETTINGS.update(dict(datasets_dir=output_dict["data"]["path"]))
                     output_dict["data"]["train"] = list()
                     output_dict["data"]["val"] = list()
                     output_dict["data"]["test"] = list()
@@ -1162,6 +1159,8 @@ class YOLORunnerWarpper(YOLORunner):
                             else:
                                 for sample in dataset["samples"]:
                                     output_dict["data"][dataset_purpose].append(os.path.join(dataset["sourceRoot"], sample["image"]))
+                    if len(output_dict["data"]["val"]) == 0:
+                        output_dict["data"]["val"] = output_dict["data"]["train"]
                 elif k in special_keys:
                     output_dict[k] = v["type"]
                     parse_dict(v, output_dict)
@@ -1193,9 +1192,9 @@ class YOLORunnerWarpper(YOLORunner):
             },
             "segment": {
                 "model": "SegmentationModel",
-                "trainer": yolo.segment.SegmentationTrainer,
-                "validator": yolo.segment.SegmentationValidator,
-                "predictor": yolo.segment.SegmentationPredictor,
+                "trainer": "SegmentationTrainer",
+                "validator": "SegmentationValidator",
+                "predictor": "SegmentationPredictor",
             },
             "pose": {
                 "model": "PoseModel",

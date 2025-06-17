@@ -3,12 +3,13 @@
 from copy import copy
 
 from ultralytics.models import yolo
+from flabplatform.flabdet.train import DetectionTrainer
 from ultralytics.nn.tasks import PoseModel
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOGGER
 from ultralytics.utils.plotting import plot_images, plot_results
 
 
-class PoseTrainer(yolo.detect.DetectionTrainer):
+class PoseTrainer(DetectionTrainer):
     """
     A class extending the DetectionTrainer class for training YOLO pose estimation models.
 

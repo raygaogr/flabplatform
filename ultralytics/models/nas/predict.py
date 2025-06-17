@@ -2,7 +2,7 @@
 
 import torch
 
-from ultralytics.models.yolo.detect.predict import DetectionPredictor
+from flabplatform.flabdet.prediction import DetectionPredictor
 from ultralytics.utils import ops
 
 

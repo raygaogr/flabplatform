@@ -1,12 +1,13 @@
 
-task: detect # (str) YOLO task, i.e. detect, segment, classify, pose, obb
+task: segment # (str) YOLO task, i.e. detect, segment, classify, pose, obb
 
 model: 
-  type: yolov8n # (str) model type or model file, i.e. yolov8n, yolov8s, yolov8m, yolov8l, yolov8x, yolov8n-seg, yolov8s-seg, yolov8m-seg, yolov8l-seg, yolov8x-seg, yolov8n-pose, yolov8s-pose, yolov8m-pose, yolov8l-pose, yolov8x-pose
+  type: yolov8n-seg # (str) model type or model file, i.e. yolov8n, yolov8s, yolov8m, yolov8l, yolov8x, yolov8n-seg, yolov8s-seg, yolov8m-seg, yolov8l-seg, yolov8x-seg, yolov8n-pose, yolov8s-pose, yolov8m-pose, yolov8l-pose, yolov8x-pose
   num_classes: 80 # (int) number of classes for custom model, i.e. 80 for COCO, 1 for custom
   
+  
 runtime:
-  save_dir: res/detect/train1 # (str) path to save results, i.e. runs/detect/train
+  save_dir: res/seg/train1 # (str) path to save results, i.e. runs/detect/train
   device: 0 # (int | str | list, optional) device to run on, i.e. cuda device=0 or device=0,1,2,3 or device=cpu
   batch: 16 # (int) number of images per batch (-1 for AutoBatch)
   workers: 8 # (int) number of worker threads for data loading (per RANK if DDP)
@@ -28,6 +29,7 @@ runtime:
   export:
     format: onnx # (str) format to export to
 
+
 augmentation:
   degrees: 0.0 # (float) image rotation (+/- deg)
   translate: 0.1 # (float) image translation (+/- fraction)
@@ -40,7 +42,7 @@ augmentation:
 
 data:
   type: custom # (str) path to data file, i.e. coco8, i.e. coco8 or custom 
-  path: ./coco8 # dataset root dir
+  path: ./coco8-seg # dataset root dir
   train: images/train # train images (relative to 'path') 4 images
   val: images/val # val images (relative to 'path') 4 images
   test: # test images (optional)
@@ -126,11 +128,13 @@ data:
     78: hair drier
     79: toothbrush
 
+
 optimizer:
   type: auto # (str) optimizer to use, choices=[SGD, Adam, Adamax, AdamW, NAdam, RAdam, RMSProp, auto]
   weight_decay: 0.0005 # (float) optimizer weight decay 5e-4
   lr0: 0.01 # (float) initial learning rate (i.e. SGD=1E-2, Adam=1E-3)
   momentum: 0.937 # (float) SGD momentum/Adam beta1
+
 
 scheduler:
   lrf: 0.01 # (float) final learning rate (lr0 * lrf)

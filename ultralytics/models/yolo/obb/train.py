@@ -3,11 +3,12 @@
 from copy import copy
 
 from ultralytics.models import yolo
+from flabplatform.flabdet.train import DetectionTrainer
 from ultralytics.nn.tasks import OBBModel
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, RANK
 
 
-class OBBTrainer(yolo.detect.DetectionTrainer):
+class OBBTrainer(DetectionTrainer):
     """
     A class extending the DetectionTrainer class for training based on an Oriented Bounding Box (OBB) model.
 

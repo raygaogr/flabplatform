@@ -5,7 +5,7 @@ import torch
 # from ultralytics.data import YOLODataset
 from flabplatform.flabdet.datasets.yolos import YOLODataset
 from ultralytics.data.augment import Compose, Format, v8_transforms
-from ultralytics.models.yolo.detect import DetectionValidator
+from flabplatform.flabdet.validation import DetectionValidator
 from flabplatform.flabdet.utils.yolos import colorstr
 from ultralytics.utils import ops
 

@@ -4,7 +4,7 @@ from copy import copy
 
 import torch
 
-from ultralytics.models.yolo.detect import DetectionTrainer
+from flabplatform.flabdet.train import DetectionTrainer
 from ultralytics.nn.tasks import RTDETRDetectionModel
 from flabplatform.flabdet.utils.yolos import RANK, colorstr
 

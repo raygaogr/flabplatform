@@ -7,10 +7,10 @@ from torch.nn import functional as F
 
 from ultralytics.data import build_dataloader, build_yolo_dataset
 from ultralytics.data.augment import LoadVisualPrompt
-from flabplatform.flabdet.datasets.utils  import check_det_dataset
-from ultralytics.models.yolo.detect import DetectionValidator
-from ultralytics.models.yolo.model import YOLOEModel
-from ultralytics.models.yolo.segment import SegmentationValidator
+from flabplatform.flabdet.datasets.yolos.utils  import check_det_dataset
+from flabplatform.flabdet.validation import DetectionValidator
+from flabplatform.flabdet.models import YOLOEModel
+from flabplatform.flabseg.validation import SegmentationValidator
 from ultralytics.nn.modules.head import YOLOEDetect
 from flabplatform.flabdet.utils.yolos import LOGGER, TQDM
 from ultralytics.utils.torch_utils import select_device, smart_inference_mode

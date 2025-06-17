@@ -2,7 +2,7 @@
 
 import torch
 
-from ultralytics.models.yolo.detect import DetectionValidator
+from flabplatform.flabdet.validation import DetectionValidator
 from ultralytics.utils import ops
 
 __all__ = ["NASValidator"]

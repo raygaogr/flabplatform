@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from flabplatform.flabdet.datasets.utils  import exif_size, img2label_paths
+from flabplatform.flabdet.datasets.yolos.utils  import exif_size, img2label_paths
 from flabplatform.flabdet.utils.yolos import TQDM
 from flabplatform.flabdet.utils.yolos.checks import check_requirements
 

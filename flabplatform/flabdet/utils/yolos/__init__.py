@@ -25,7 +25,6 @@ import tqdm
 import yaml
 
 from ultralytics.utils.patches import imread, imshow, imwrite, torch_load, torch_save  # for patches
-# from ultralytics.utils import LOGGER
 from flabplatform.core.logging import MMLogger
 import logging
 

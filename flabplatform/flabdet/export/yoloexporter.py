@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 from ultralytics.data import build_dataloader
-from flabplatform.flabdet.datasets.utils import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.yolos.utils import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Classify, Detect, RTDETRDecoder
 from flabplatform.flabdet.utils.yolos.checks import (

@@ -74,7 +74,7 @@ from ultralytics.cfg import TASK2DATA, get_cfg
 from ultralytics.data import build_dataloader
 # from ultralytics.data.dataset import YOLODataset
 from flabplatform.flabdet.datasets.yolos import YOLODataset
-from flabplatform.flabdet.datasets.utils  import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.yolos.utils  import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Classify, Detect, RTDETRDecoder
 from ultralytics.nn.tasks import ClassificationModel, DetectionModel, SegmentationModel, WorldModel

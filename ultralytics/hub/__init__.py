@@ -2,7 +2,7 @@
 
 import requests
 
-from flabplatform.flabdet.datasets.utils  import HUBDatasetStats
+from flabplatform.flabdet.datasets.yolos.utils  import HUBDatasetStats
 from ultralytics.hub.auth import Auth
 from ultralytics.hub.session import HUBTrainingSession
 from ultralytics.hub.utils import HUB_API_ROOT, HUB_WEB_ROOT, PREFIX, events

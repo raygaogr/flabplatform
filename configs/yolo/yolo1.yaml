@@ -1,21 +1,23 @@
 operation: training, eval
+"task": "segment"
 commonParams:
   datasets:
     rootDir: D:/Workspace_gr/pyProjects/flabplatform/datasets
-    metadata: metadata.json
+    metafile: D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json
     data:
       train:
-        - coco8/images/train
+        - coco8-seg/images/train
       val:
-        - coco8/images/val
-  outputDir: D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2
+        - coco8-seg/images/val
+  outputDir: D:/Workspace_gr/pyProjects/flabplatform/res/seg/train2
+  pretrainDir: ""
   mqTopic: ""
   modelDir: weights
 
 training:
   algoParams:
     model:
-      type: yolov8n
+      type: yolov8n-seg
       num_classes: 80
     device: 0
     batch: 16

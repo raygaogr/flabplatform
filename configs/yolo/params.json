@@ -8,10 +8,10 @@
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train3",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train3/models",
-    "baseModelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2/models"
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1/models",
+    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/"
   },
   "training": {
     "algoParams": {
@@ -20,7 +20,7 @@
         "num_classes": 80
       },
       "device": 0, 
-      "batch": 16, 
+      "batch": 2, 
       "workers": 8, 
       "imgsz": 640, 
       "seed": 0,
@@ -38,7 +38,7 @@
   },
   "eval": {
     "algoParams": {
-      "conf": 0.2,
+      "conf": 0.001,
       "iou": 0.5, 
       "max_det": 300 
     }

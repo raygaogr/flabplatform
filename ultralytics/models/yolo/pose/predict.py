@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-from ultralytics.models.yolo.detect.predict import DetectionPredictor
+from flabplatform.flabdet.prediction import DetectionPredictor
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOGGER
 from ultralytics.utils import ops
 

@@ -4,6 +4,7 @@ import itertools
 
 from ultralytics.data import build_yolo_dataset
 from ultralytics.models import yolo
+from flabplatform.flabdet.train import DetectionTrainer
 from ultralytics.nn.tasks import WorldModel
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, RANK
 from flabplatform.flabdet.utils.yolos import checks
@@ -22,7 +23,7 @@ def on_pretrain_routine_end(trainer):
         p.requires_grad_(False)
 
 
-class WorldTrainer(yolo.detect.DetectionTrainer):
+class WorldTrainer(DetectionTrainer):
     """
     A class to fine-tune a world model on a close-set dataset.
 

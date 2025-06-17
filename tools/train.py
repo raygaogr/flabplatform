@@ -40,13 +40,12 @@ def set_environ(device="", batch=0 ):
             )
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a model')
-    parser.add_argument('config', help='The yaml config file path')
+    parser = argparse.ArgumentParser(description='Tools for train/eval/test a model')
+    parser.add_argument('config', help='The config file path')
     args = parser.parse_args()
     return args
 
 def main():
-    # 这里可以改成自己的配置文件路径
     args = parse_args()
 
     with open(args.config, 'r', encoding='utf-8') as f:
@@ -56,15 +55,25 @@ def main():
             cfg = json.load(f)
         else:
             raise ValueError("config file must be yaml or json")
-    device = cfg["training"]["algoParams"]["device"]
+    device = 0
     set_environ(device)
 
     from flabplatform.core.engine import create_runner
+    from flabplatform.core.engine.utils import AiAnnotation
     # 构建执行器
     runner = create_runner(args)
 
-    # 训练：
-    runner.train()
+    if "train" in cfg["operation"]:
+        # 训练：
+        runner.train()
+    elif "val" in cfg["operation"]:
+        # 验证评估：
+        val_res = runner.val(imgsz=640, batch=16, conf=0.25, iou=0.6)
+        print(val_res)
+    elif "aiannotation" in cfg["operation"]:
+        # AI标注：
+        aianno = AiAnnotation(cfg)
+        aianno.process_message(runner)
 
     # # 验证评估：
     # val_res = runner.val(imgsz=640, batch=16, conf=0.25, iou=0.6)
@@ -79,8 +88,6 @@ def main():
 
     # # 导出：
     # runner.export(format="onnx")
-
-
 
 if __name__ == '__main__':
     main()

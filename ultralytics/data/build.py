@@ -20,7 +20,7 @@ from ultralytics.data.loaders import (
     SourceTypes,
     autocast_list,
 )
-from flabplatform.flabdet.datasets.utils  import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
+from flabplatform.flabdet.datasets.yolos.utils  import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
 from flabplatform.flabdet.utils.yolos import RANK, colorstr
 from flabplatform.flabdet.utils.yolos.checks import check_file
 

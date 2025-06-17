@@ -3,7 +3,7 @@
 
 from copy import copy, deepcopy
 
-from ultralytics.models.yolo.segment import SegmentationTrainer
+from flabplatform.flabseg.train import SegmentationTrainer
 from ultralytics.nn.tasks import YOLOESegModel
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, RANK
 

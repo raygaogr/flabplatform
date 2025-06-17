@@ -15,7 +15,7 @@ import requests
 import torch
 from PIL import Image
 
-from flabplatform.flabdet.datasets.utils  import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
+from flabplatform.flabdet.datasets.yolos.utils  import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
 from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils import ops
 from flabplatform.flabdet.utils.yolos.checks import check_requirements

@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-from ultralytics.models.yolo.segment import SegmentationValidator
+from flabplatform.flabseg.validation import SegmentationValidator
 from ultralytics.utils.metrics import SegmentMetrics
 
 

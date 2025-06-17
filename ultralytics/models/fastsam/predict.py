@@ -3,7 +3,7 @@
 import torch
 from PIL import Image
 
-from ultralytics.models.yolo.segment import SegmentationPredictor
+from flabplatform.flabseg.prediction import SegmentationPredictor
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
 from flabplatform.flabdet.utils.yolos import checks
 from ultralytics.utils.metrics import box_iou

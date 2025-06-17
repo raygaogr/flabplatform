@@ -5,8 +5,8 @@ import numpy as np
 import torch
 
 from ultralytics.data.augment import LoadVisualPrompt
-from ultralytics.models.yolo.detect import DetectionPredictor
-from ultralytics.models.yolo.segment import SegmentationPredictor
+from flabplatform.flabdet.prediction import DetectionPredictor
+from flabplatform.flabseg.prediction import SegmentationPredictor
 
 
 class YOLOEVPDetectPredictor(DetectionPredictor):

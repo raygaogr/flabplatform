@@ -8,8 +8,9 @@ import torch
 
 from ultralytics.data import build_grounding, build_yolo_dataset
 from ultralytics.data.augment import LoadVisualPrompt
-from flabplatform.flabdet.datasets.utils  import check_det_dataset
-from ultralytics.models.yolo.detect import DetectionTrainer, DetectionValidator
+from flabplatform.flabdet.datasets.yolos.utils  import check_det_dataset
+from flabplatform.flabdet.train import DetectionTrainer
+from flabplatform.flabdet.validation import DetectionValidator
 from ultralytics.nn.tasks import YOLOEModel
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG, LOGGER, RANK
 from ultralytics.utils.torch_utils import de_parallel

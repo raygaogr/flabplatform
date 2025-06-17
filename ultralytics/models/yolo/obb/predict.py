@@ -3,7 +3,7 @@
 import torch
 
 from ultralytics.engine.results import Results
-from ultralytics.models.yolo.detect.predict import DetectionPredictor
+from flabplatform.flabdet.prediction import DetectionPredictor
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
 from ultralytics.utils import ops
 

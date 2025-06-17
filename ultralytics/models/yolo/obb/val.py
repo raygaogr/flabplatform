@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from ultralytics.models.yolo.detect import DetectionValidator
+from flabplatform.flabdet.validation import DetectionValidator
 from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils import ops
 from ultralytics.utils.metrics import OBBMetrics, batch_probiou

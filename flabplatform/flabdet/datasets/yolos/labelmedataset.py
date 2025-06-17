@@ -21,7 +21,7 @@ from ultralytics.data.augment import (
     LetterBox,
     v8_transforms,
 )
-from flabplatform.flabdet.datasets.utils  import (
+from flabplatform.flabdet.datasets.yolos.utils  import (
     get_hash,
     img2label_paths_labelme,
     load_dataset_cache_file,

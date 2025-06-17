@@ -30,7 +30,7 @@ from ultralytics.data.augment import (
     v8_transforms,
 )
 from ultralytics.data.converter import merge_multi_segment
-from flabplatform.flabdet.datasets.utils import (
+from flabplatform.flabdet.datasets.yolos.utils import (
     get_hash,
     img2label_paths,
     img2label_paths_labelme,

@@ -14,7 +14,7 @@ from torch import distributed as dist
 from torch import nn, optim
 
 from ultralytics.data import build_dataloader #, build_yolo_dataset
-from flabplatform.flabdet.datasets.utils  import check_cls_dataset, check_det_dataset
+from flabplatform.flabdet.datasets.yolos.utils  import check_cls_dataset, check_det_dataset
 
 from ultralytics.utils import callbacks
 from ultralytics.utils.autobatch import check_train_batch_size
