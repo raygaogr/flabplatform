@@ -11,7 +11,12 @@
     "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1",
     "mqTopic": "",
     "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1/models",
-    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/"
+    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/",
+    "pipelineData": {
+      "pipelineId": "",
+      "runId": "",
+      "nodeId": ""
+    }
   },
   "aiannotation": {
     "algoParams": {
@@ -19,6 +24,7 @@
         "type": "yolov8n",
         "num_classes": 80
       },
+      "device": 0,
       "conf": 0.2,
       "iou": 0.5,
       "max_det": 300

@@ -424,10 +424,11 @@ def attempt_download_asset(file, repo="ultralytics/assets", release="v8.3.0", **
     file = str(file)
     file = checks.check_yolov5u_filename(file)
     file = Path(file.strip().replace("'", ""))
+    models_dir = Path("models")
     if file.exists():
         return str(file)
-    elif (SETTINGS["weights_dir"] / file).exists():
-        return str(SETTINGS["weights_dir"] / file)
+    elif (models_dir / file).exists():
+        return str(models_dir / file)
     else:
         # URL specified
         name = Path(parse.unquote(str(file))).name  # decode '%2F' to '/' etc.

@@ -1,4 +1,3 @@
-# TODO: Add the registry for the flabdet project.
 from flabplatform.core.registry import DATA_SAMPLERS as ROOT_DATA_SAMPLERS
 from flabplatform.core.registry import DATASETS as ROOT_DATASETS
 from flabplatform.core.registry import EVALUATOR as ROOT_EVALUATOR

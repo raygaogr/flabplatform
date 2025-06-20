@@ -195,7 +195,6 @@ class YOLORunner(BaseRunner):
         model_cfg = {}
         model_cfg["type"] = self._smart_load("model")
         model_cfg["cfg"] = cfg_dict
-        model_cfg["nc"] = self.overrides["num_classes"]
         self.model = MODELS.build(model_cfg)
 
         # Below added to allow export from YAMLs
@@ -227,17 +226,16 @@ class YOLORunner(BaseRunner):
         if Path(weights).suffix == ".pt":
             self.model, self.ckpt = attempt_load_one_weight(weights)
             self.task = self.model.args["task"]
+            weights = self.model.args.get("model", "yolo11n").strip().split(".")[0]
             self.model.args = self._reset_ckpt_args(self.model.args)
-            # if self.overrides["resume"]:
-            #     self.overrides = self.model.args = {**self.overrides, **self.model.args}
-            # else:
-            self.model.args = self.overrides
             self.ckpt_path = self.model.pt_path
-        else:
+        else: #TODO 
             weights = checks.check_file(weights)  # runs in all cases, not redundant with above call
             self.model, self.ckpt = weights, None
             self.task = task or guess_model_task(weights)
             self.ckpt_path = weights
+        self.overrides["model"] = weights
+        self.overrides["task"] = self.task
 
     def _check_is_pytorch_model(self) -> None:
         """
@@ -468,8 +466,10 @@ class YOLORunner(BaseRunner):
             source = ASSETS
             LOGGER.warning(f"WARNING ⚠️ 'source' is missing. Using 'source={source}'.")
 
-        custom = {"conf": 0.25, "batch": 1, "save": False, "mode": "predict", "rect": True}  # method defaults
+        custom = {"batch": 1, "save": False, "mode": "predict", "rect": True}  # method defaults
         args = {**self.overrides, **custom, **kwargs}  # highest priority args on the right
+        if args.get("conf") is None:
+            args["conf"] = 0.25
         prompts = args.pop("prompts", None)  # for SAM-type models
 
         if not self.predictor:
@@ -1123,7 +1123,7 @@ class YOLORunnerWarpper(YOLORunner):
     def from_cfg(cls, cfg: Config):
         cfg_dict = cfg.to_dict()
         special_keys = ["model", "optimizer"]
-        ignore_keys = ["mqTopic", "rootDir", "type"] #TODO
+        ignore_keys = ["mqTopic", "rootDir", "type", "pipelineId", "runId", "nodeId"] #TODO
 
         def parse_dict(input_dict: dict, output_dict: dict) -> dict:
             for k, v in input_dict.items():
@@ -1135,32 +1135,10 @@ class YOLORunnerWarpper(YOLORunner):
                 elif k == "operation":
                     if "training" in v:
                         output_dict["mode"] = "train"
-                    elif "eval" in v or "val" in v:
+                    elif "eval" in v or "val" in v or "test" in v:
                         output_dict["mode"] = "val"
-                    elif "predict" in v or "test" in v:
-                        output_dict["mode"] = "predict"
                 elif k == "metafile":
-                    data_cfg = Config.fromfile(v)
-                    output_dict["data"] = dict()
-                    output_dict["data"]["names"] = data_cfg["labels"]
-                    output_dict["data"]["path"] = cfg_dict["commonParams"]["datasets"]["rootDir"]
-                    SETTINGS.update(dict(datasets_dir=output_dict["data"]["path"]))
-                    output_dict["data"]["train"] = list()
-                    output_dict["data"]["val"] = list()
-                    output_dict["data"]["test"] = list()
-                    valid_purpose = ["train", "eval", "test"]
-                    for dataset in data_cfg["datasets"]:
-                        dataset_purpose = dataset["purpose"]
-                        if dataset_purpose in valid_purpose:
-                            if dataset["purpose"] == "eval":
-                                dataset_purpose = "val"
-                            if len(dataset["samples"]) == 0:
-                                output_dict["data"][dataset_purpose].append(dataset["sourceRoot"])
-                            else:
-                                for sample in dataset["samples"]:
-                                    output_dict["data"][dataset_purpose].append(os.path.join(dataset["sourceRoot"], sample["image"]))
-                    if len(output_dict["data"]["val"]) == 0:
-                        output_dict["data"]["val"] = output_dict["data"]["train"]
+                    output_dict["data"] = v
                 elif k in special_keys:
                     output_dict[k] = v["type"]
                     parse_dict(v, output_dict)
@@ -1171,7 +1149,39 @@ class YOLORunnerWarpper(YOLORunner):
                         output_dict[k] = v
             return output_dict
         
+        def parse_data(input_dict: dict) -> dict:
+            """Parse data dictionary to ensure it has the correct structure."""
+            data_cfg = Config.fromfile(input_dict["data"])
+            input_dict["data"] = dict()
+            input_dict["data"]["path"] = cfg_dict["commonParams"]["datasets"]["rootDir"]
+            SETTINGS.update(dict(datasets_dir=input_dict["data"]["path"]))
+            input_dict["data"]["names"] = data_cfg.get("labels", [])
+            input_dict["data"]["train"] = list()
+            input_dict["data"]["val"] = list()
+            input_dict["data"]["test"] = list()
+            valid_purpose = ["train", "eval", "test"]
+            exist_purpose = []
+            for dataset in data_cfg["datasets"]:
+                dataset_purpose = dataset["purpose"]
+                if dataset_purpose in valid_purpose:
+                    if dataset["purpose"] == "eval":
+                        dataset_purpose = "val"
+                    exist_purpose.append(dataset_purpose)
+                    if len(dataset["samples"]) == 0:
+                        input_dict["data"][dataset_purpose].append(dataset["sourceRoot"])
+                    else:
+                        for sample in dataset["samples"]:
+                            input_dict["data"][dataset_purpose].append(os.path.join(dataset["sourceRoot"], sample["image"]))
+            if input_dict["mode"] not in exist_purpose:
+                raise ValueError(
+                    f"Invalid operation '{input_dict['mode']}' specified. "
+                )
+            if len(input_dict["data"]["val"]) == 0 and input_dict["mode"] == "train":
+                input_dict["data"]["val"] = input_dict["data"]["train"]
+            return input_dict
+
         overrides = parse_dict(cfg_dict, {})
+        overrides = parse_data(overrides)
         return cls(cfg=overrides)
         
     @property

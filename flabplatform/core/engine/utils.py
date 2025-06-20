@@ -2,7 +2,7 @@ from flabplatform.core.config import Config
 import os.path as osp
 import os
 from flabplatform.core.logging import MMLogger
-from confluent_kafka import Producer, Consumer, TopicPartition
+
 import time
 import json
 import signal
@@ -38,6 +38,7 @@ class AiAnnotation:
         self.running = True
 
         try:
+            from confluent_kafka import Producer, Consumer, TopicPartition
             self.producer = Producer(self.CONFIG["producer_conf"])
         except Exception as e:
             self.logger.error(f"Error initializing PrepareData: {e}")
@@ -67,7 +68,7 @@ class AiAnnotation:
         datasets = self.meta_json["datasets"]
         datapath = []
         for dataset in datasets:
-            if dataset["purpose"] == "ai-annotation":
+            if dataset["purpose"] == "aiannotation":
                 if len(dataset["samples"]) > 0:
                     for sample in dataset["samples"]:
                         datapath.append(osp.join(self.root_dir, dataset["sourceRoot"], sample["image"]))
@@ -101,19 +102,21 @@ class AiAnnotation:
             shapes = []
             label_names = results.names
             if self.task == "detect":
-                for i, box in enumerate(results.boxes):
-                    temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
-                    temp_unit['points'] = box.xyxy[0].reshape((2, 2)).tolist()
-                    temp_unit["label"] = label_names[int(box.cls[0].item())]
-                    shapes.append(temp_unit)
+                if results.boxes:
+                    for i, box in enumerate(results.boxes):
+                        temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
+                        temp_unit['points'] = box.xyxy[0].reshape((2, 2)).tolist()
+                        temp_unit["label"] = label_names[int(box.cls[0].item())]
+                        shapes.append(temp_unit)
                 standard_json["shapes"] = shapes
             elif self.task == "segment":
-                for i, mask in enumerate(results.masks):
-                    temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'polygon'}
-                    temp_unit['points'] = mask.xy[0].tolist()
-                    cls_id = results.boxes.cls[i].item()
-                    temp_unit["label"] = label_names[cls_id]
-                    shapes.append(temp_unit)
+                if results.masks:
+                    for i, mask in enumerate(results.masks):
+                        temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'polygon'}
+                        temp_unit['points'] = mask.xy[0].tolist()
+                        cls_id = results.boxes.cls[i].item()
+                        temp_unit["label"] = label_names[cls_id]
+                        shapes.append(temp_unit)
                 standard_json["shapes"] = shapes
             elif self.task == "classify":
                 pass
@@ -121,6 +124,8 @@ class AiAnnotation:
                 self.logger.error(f"Unsupported task type: {self.task}")
                 continue
 
+            if not os.path.exists(self.save_dir):
+                os.makedirs(self.save_dir, exist_ok=True)
             with open(osp.join(self.save_dir, osp.basename(name)[:-4] + ".json"), 'w', encoding='utf-8') as f:
                 json.dump(standard_json, f, indent=4)
             
@@ -195,18 +200,6 @@ def merge_args(cfg, args):
     cfg.optim_wrapper.type = 'AmpOptimWrapper'
     cfg.optim_wrapper.loss_scale = 'dynamic'
 
-    # # enable automatically scaling LR
-    # if args.auto_scale_lr:
-    #     if 'auto_scale_lr' in cfg and \
-    #             'enable' in cfg.auto_scale_lr and \
-    #             'base_batch_size' in cfg.auto_scale_lr:
-    #         cfg.auto_scale_lr.enable = True
-    #     else:
-    #         raise RuntimeError('Can not find "auto_scale_lr" or '
-    #                            '"auto_scale_lr.enable" or '
-    #                            '"auto_scale_lr.base_batch_size" in your'
-    #                            ' configuration file.')
-    # resume is determined in this priority: resume from > auto_resume
     # if args.resume == 'auto':
     # cfg.resume = True
     # cfg.load_from = None

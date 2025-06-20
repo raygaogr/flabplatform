@@ -2,7 +2,7 @@ from ultralytics.engine.results import Results
 from flabplatform.flabdet.prediction import DetectionPredictor
 from ultralytics.utils import ops
 from flabplatform.flabdet.utils.yolos import DEFAULT_CFG
-from flabplatform.flabseg.registry import PREDICTORS
+from flabplatform.flabdet.registry import PREDICTORS
 
 @PREDICTORS.register_module()
 class SegmentationPredictor(DetectionPredictor):

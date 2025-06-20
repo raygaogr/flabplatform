@@ -1,0 +1,28 @@
+
+
+{
+  "operation": "test",
+  "task": "segment",
+  "commonParams": {
+    "datasets": {
+      "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
+      "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
+    },
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/segment/train1",
+    "mqTopic": "",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/segment/train1/models",
+    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/"
+  },
+  "test": {
+    "algoParams": {
+      "model": {
+        "type": "yolov8n-seg",
+        "num_classes": 80
+      },
+      "device": 0,
+      "conf": 0.2,
+      "iou": 0.5,
+      "max_det": 300
+    }
+  }
+}

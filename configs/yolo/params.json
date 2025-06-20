@@ -8,10 +8,10 @@
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1/models",
-    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/"
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2/models",
+    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models"
   },
   "training": {
     "algoParams": {
