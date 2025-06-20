@@ -122,7 +122,7 @@ class HUBTrainingSession:
         """
         self.model = self.client.model(model_id)
         if not self.model.data:  # then model does not exist
-            raise ValueError(emojis("❌ The specified HUB model does not exist"))  # TODO: improve error handling
+            raise ValueError(emojis("❌ The specified HUB model does not exist"))  
 
         self.model_url = f"{HUB_WEB_ROOT}/models/{self.model.id}"
         if self.model.is_trained():
@@ -169,7 +169,6 @@ class HUBTrainingSession:
         self.model.create_model(payload)
 
         # Model could not be created
-        # TODO: improve error handling
         if not self.model.id:
             return None
 

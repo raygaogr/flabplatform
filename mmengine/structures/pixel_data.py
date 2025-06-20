@@ -84,7 +84,6 @@ class PixelData(BaseDataElement):
                               f'{value.shape[-2:]} to {value.shape}')
             super().__setattr__(name, value)
 
-    # TODO torch.Long/bool
     def __getitem__(self, item: Sequence[Union[int, slice]]) -> 'PixelData':
         """
         Args:
@@ -127,4 +126,3 @@ class PixelData(BaseDataElement):
         else:
             return None
 
-    # TODO padding, resize

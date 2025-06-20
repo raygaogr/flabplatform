@@ -212,14 +212,12 @@ class YOLOETrainerFromScratch(YOLOETrainer):
             This method collects category names from datasets that have the 'category_names' attribute,
             then uses the first dataset's image path to determine where to cache the generated text embeddings.
         """
-        # TODO: open up an interface to determine whether to do cache
         category_names = set()
         for dataset in datasets:
             if not hasattr(dataset, "category_names"):
                 continue
             category_names |= dataset.category_names
 
-        # TODO: enable to update the path or use a more general way to get the path
         img_path = datasets[0].img_path
         self.text_embeddings = self.generate_text_embeddings(
             category_names, batch, cache_path=Path(img_path).parent / "text_embeddings.pt"

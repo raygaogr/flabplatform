@@ -1003,7 +1003,7 @@ class YOLOEModel(DetectionModel):
         if not hasattr(self, "criterion"):
             from ultralytics.utils.loss import TVPDetectLoss
 
-            visual_prompt = batch.get("visuals", None) is not None  # TODO
+            visual_prompt = batch.get("visuals", None) is not None  
             self.criterion = TVPDetectLoss(self) if visual_prompt else self.init_criterion()
 
         if preds is None:
@@ -1037,7 +1037,7 @@ class YOLOESegModel(YOLOEModel, SegmentationModel):
         if not hasattr(self, "criterion"):
             from ultralytics.utils.loss import TVPSegmentLoss
 
-            visual_prompt = batch.get("visuals", None) is not None  # TODO
+            visual_prompt = batch.get("visuals", None) is not None  
             self.criterion = TVPSegmentLoss(self) if visual_prompt else self.init_criterion()
 
         if preds is None:

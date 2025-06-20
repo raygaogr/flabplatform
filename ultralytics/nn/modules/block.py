@@ -802,7 +802,6 @@ class BNContrastiveHead(nn.Module):
         """
         Passes input out unchanged.
 
-        TODO: Update or remove?
         """
         return x
 

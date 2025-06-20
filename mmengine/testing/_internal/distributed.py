@@ -332,7 +332,6 @@ class MultiProcessTestCase(TestCase):
         # (via TEST_ERROR_EXIT CODE), and raise an exception for those.
         # the reason we do this is to attempt to raise a more helpful error
         # message than "Process x terminated/timed out"
-        # TODO: we should pipe the exception of the failed subprocess here.
         # Currently, the actual exception is displayed as a logging output.
         errored_processes = [
             (i, p) for i, p in enumerate(self.processes)

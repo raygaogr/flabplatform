@@ -1195,7 +1195,6 @@ class FlexibleRunner:
 
         self.load_or_resume()
 
-        # TODO: add a contextmanager to avoid calling `before_run` many times
         self.call_hook('before_run')
 
         model = self.train_loop.run()  # type: ignore
@@ -1473,7 +1472,6 @@ class FlexibleRunner:
             previous_gpu_ids = config.get('gpu_ids', None)
             if (previous_gpu_ids is not None and len(previous_gpu_ids) > 0
                     and len(previous_gpu_ids) != self.world_size):
-                # TODO, should we modify the iteration?
                 self.logger.info(
                     'Number of GPU used for current experiment is not '
                     'consistent with resuming from checkpoint')

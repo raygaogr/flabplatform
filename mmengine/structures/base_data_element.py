@@ -311,7 +311,6 @@ class BaseDataElement:
         # We assume that the name of the attribute related to property is
         # '_' + the name of the property. We use this rule to filter out
         # private keys.
-        # TODO: Use a more robust way to solve this problem
         private_keys = {
             '_' + key
             for key in self._data_fields

@@ -12,7 +12,6 @@ from mmengine.utils.dl_utils import tensor2imgs
 DATA_BATCH = Optional[Union[dict, tuple, list]]
 
 
-# TODO: Due to interface changes, the current class
 #  functions incorrectly
 @HOOKS.register_module()
 class NaiveVisualizationHook(Hook):
@@ -77,7 +76,6 @@ class NaiveVisualizationHook(Hook):
                 input = tensor2imgs(input,
                                     **data_sample.get('img_norm_cfg',
                                                       dict()))[0]
-                # TODO We will implement a function to revert the augmentation
                 # in the future.
                 ori_shape = (data_sample.ori_width, data_sample.ori_height)
                 if 'pad_shape' in data_sample:

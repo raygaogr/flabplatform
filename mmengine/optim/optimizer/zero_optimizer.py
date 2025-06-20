@@ -67,7 +67,6 @@ class ZeroRedundancyOptimizer(_ZeroRedundancyOptimizer):
                 'enable this feature, or disable param groups by deleting '
                 '`paramwise_cfg` filed in config file.')
         optimizer_class = getattr(torch.optim, optimizer_type)
-        # TODO: Register a DDP communication hook for `overlap_with_ddp=True`.
         # Currently only `overlap_with_ddp=False` is supported. For more
         # details, please refer to the pytorch's official documentation.
         super().__init__(params, optimizer_class, **kwargs)

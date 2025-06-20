@@ -9,7 +9,6 @@ from ..layers.transformer import (DABDetrTransformerDecoder,
                                   DABDetrTransformerEncoder, inverse_sigmoid)
 from .detr import DETR
 
-#TODO
 @MODELS.register_module()
 class DABDETR(DETR):
     r"""Implementation of `DAB-DETR:

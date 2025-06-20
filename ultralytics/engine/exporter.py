@@ -816,7 +816,6 @@ class Exporter:
         else:
             if self.args.nms:
                 LOGGER.warning(f"{prefix} WARNING ⚠️ 'nms=True' is only available for Detect models like 'yolo11n.pt'.")
-                # TODO CoreML Segment and Pose model pipelining
             model = self.model
         ts = torch.jit.trace(model.eval(), self.im, strict=False)  # TorchScript model
 

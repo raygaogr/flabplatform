@@ -155,7 +155,7 @@ class BaseDataset(Dataset):
         self.ims, self.im_hw0, self.im_hw = [None] * self.ni, [None] * self.ni, [None] * self.ni
         self.npy_files = [Path(f).with_suffix(".npy") for f in self.im_files]
         self.cache = cache.lower() if isinstance(cache, str) else "ram" if cache is True else None
-        if self.cache == "ram" and self.check_cache_ram():
+        if self.cache == "ram" and self.check_cache_ram(): #TODO
             if hyp.deterministic:
                 LOGGER.warning(
                     "WARNING ⚠️ cache='ram' may produce non-deterministic training results. "

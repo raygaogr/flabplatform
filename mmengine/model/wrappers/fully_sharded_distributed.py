@@ -224,7 +224,6 @@ class MMFullyShardedDataParallel(FullyShardedDataParallel):
 
         # ignored_parameters and ignored_modules will be deprecated by PyTorch.
         # Therefore we hide them in **kwargs.
-        # TODO: Update when PyTorch 2.1.0 released
         if 'ignored_parameters' in kwargs:
             kwargs['ignored_parameters'] = self._get_ignored_params(
                 module, kwargs['ignored_parameters'])

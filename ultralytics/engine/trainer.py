@@ -672,7 +672,6 @@ class BaseTrainer:
         """Returns a string describing training progress."""
         return ""
 
-    # TODO: may need to put these following functions into callback
     def plot_training_samples(self, batch, ni):
         """Plots training samples during YOLO training."""
         pass
