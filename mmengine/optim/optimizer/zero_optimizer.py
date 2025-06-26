@@ -9,7 +9,7 @@ from mmengine.utils.dl_utils import TORCH_VERSION
 
 try:
     from torch.distributed.optim import \
-        ZeroRedundancyOptimizer as _ZeroRedundancyOptimizer
+            ZeroRedundancyOptimizer as _ZeroRedundancyOptimizer
 except ImportError:
     _ZeroRedundancyOptimizer = object
 

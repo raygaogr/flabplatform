@@ -1,0 +1,20 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "n01440764",
+      "points": [],
+      "group_id": null,
+      "description": null,
+      "shape_type": "classification",
+      "flags": {}
+    }
+  ],
+  "imagePath": "ILSVRC2012_val_00041939.JPEG",
+  "imageData": null,
+  "imageHeight": 160,
+  "imageWidth": 120,
+  "mask": null,
+  "labelObj": {}
+}

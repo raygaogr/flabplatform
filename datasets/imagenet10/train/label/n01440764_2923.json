@@ -1,0 +1,20 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "n01440764",
+      "points": [],
+      "group_id": null,
+      "description": null,
+      "shape_type": "classification",
+      "flags": {}
+    }
+  ],
+  "imagePath": "n01440764_2923.JPEG",
+  "imageData": null,
+  "imageHeight": 127,
+  "imageWidth": 160,
+  "mask": null,
+  "labelObj": {}
+}

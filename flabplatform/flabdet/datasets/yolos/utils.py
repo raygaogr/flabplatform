@@ -13,9 +13,6 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
-from ultralytics.nn.autobackend import check_class_names
-from ultralytics.utils.downloads import download, safe_download, unzip_file
-from ultralytics.utils.ops import segments2boxes
 from flabplatform.flabdet.utils.yolos import (
     DATASETS_DIR,
     LOGGER,
@@ -95,6 +92,7 @@ def verify_image(args):
 
 def verify_image_label(args):
     """Verify one image-label pair."""
+    from ultralytics.utils.ops import segments2boxes
     im_file, lb_file, prefix, keypoint, num_cls, nkpt, ndim, single_cls, name2id = args
     # Number (missing, found, empty, corrupt), message, segments, keypoints
     nm, nf, ne, nc, msg, segments, keypoints = 0, 0, 0, 0, "", [], None
@@ -168,6 +166,7 @@ def verify_image_label(args):
 
 def verify_image_label_labelme(args):
     """Verify one image-label pair."""
+    from ultralytics.utils.ops import segments2boxes
     im_file, lb_file, prefix, keypoint, num_cls, nkpt, ndim, single_cls, name2id = args
     # Number (missing, found, empty, corrupt), message, segments, keypoints
     nm, nf, ne, nc, msg, segments, keypoints = 0, 0, 0, 0, "", [], None
@@ -185,11 +184,11 @@ def verify_image_label_labelme(args):
                 if f.read() != b"\xff\xd9":  # corrupt JPEG
                     ImageOps.exif_transpose(Image.open(im_file)).save(im_file, "JPEG", subsampling=0, quality=100)
                     msg = f"{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved"
-
+        
         # Verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            with open(lb_file, encoding="utf-8") as f:
+            with open(lb_file, encoding="utf-8") as f: #TODO 增加对分类的支持，增加对brush的支持
                 lb_json = json.load(f)
                 image_width = lb_json["imageWidth"]
                 image_height = lb_json["imageHeight"]
@@ -409,6 +408,7 @@ def check_det_dataset(dataset, autodownload=True):
     Returns:
         (dict): Parsed dataset information and paths.
     """
+    from ultralytics.utils.downloads import safe_download
     if isinstance(dataset, str):
 
         file = check_file(dataset)
@@ -443,7 +443,7 @@ def check_det_dataset(dataset, autodownload=True):
         data["names"] = [f"class_{i}" for i in range(data["nc"])]
     else:
         data["nc"] = len(data["names"])
-
+    from ultralytics.nn.autobackend import check_class_names
     data["names"] = check_class_names(data["names"])
 
     # Resolve paths
@@ -493,222 +493,200 @@ def check_cls_dataset(dataset, split=""):
             - 'nc' (int): The number of classes in the dataset.
             - 'names' (dict): A dictionary of class names in the dataset.
     """
-    # Download (optional if dataset=https://file.zip is passed directly)
-    if str(dataset).startswith(("http:/", "https:/")):
-        dataset = safe_download(dataset, dir=DATASETS_DIR, unzip=True, delete=False)
-    elif Path(dataset).suffix in {".zip", ".tar", ".gz"}:
-        file = check_file(dataset)
-        dataset = safe_download(file, dir=DATASETS_DIR, unzip=True, delete=False)
-
-    dataset = Path(dataset)
-    data_dir = (dataset if dataset.is_dir() else (DATASETS_DIR / dataset)).resolve()
-    if not data_dir.is_dir():
-        LOGGER.warning(f"\nDataset not found ⚠️, missing path {data_dir}, attempting download...")
-        t = time.time()
-        if str(dataset) == "imagenet":
-            subprocess.run(f"bash {YOLO_ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
-        else:
-            url = f"https://github.com/ultralytics/assets/releases/download/v0.0.0/{dataset}.zip"
-            download(url, dir=data_dir.parent)
-        s = f"Dataset download success ✅ ({time.time() - t:.1f}s), saved to {colorstr('bold', data_dir)}\n"
-        LOGGER.info(s)
-    train_set = data_dir / "train"
-    val_set = (
-        data_dir / "val"
-        if (data_dir / "val").exists()
-        else data_dir / "validation"
-        if (data_dir / "validation").exists()
-        else None
-    )  # data/test or data/val
-    test_set = data_dir / "test" if (data_dir / "test").exists() else None  # data/val or data/test
-    if split == "val" and not val_set:
-        LOGGER.warning("WARNING ⚠️ Dataset 'split=val' not found, using 'split=test' instead.")
-        val_set = test_set
-    elif split == "test" and not test_set:
-        LOGGER.warning("WARNING ⚠️ Dataset 'split=test' not found, using 'split=val' instead.")
-        test_set = val_set
-
-    nc = len([x for x in (data_dir / "train").glob("*") if x.is_dir()])  # number of classes
-    names = [x.name for x in (data_dir / "train").iterdir() if x.is_dir()]  # class names list
+    nc = len(dataset['names'])  # number of classes
+    names = dataset['names']  # class names list
     names = dict(enumerate(sorted(names)))
 
-    # Print to console
-    for k, v in {"train": train_set, "val": val_set, "test": test_set}.items():
-        prefix = f"{colorstr(f'{k}:')} {v}..."
-        if v is None:
-            LOGGER.info(prefix)
-        else:
-            files = [path for path in v.rglob("*.*") if path.suffix[1:].lower() in IMG_FORMATS]
-            nf = len(files)  # number of files
-            nd = len({file.parent for file in files})  # number of directories
-            if nf == 0:
-                if k == "train":
-                    raise FileNotFoundError(emojis(f"{dataset} '{k}:' no training images found ❌ "))
-                else:
-                    LOGGER.warning(f"{prefix} found {nf} images in {nd} classes: WARNING ⚠️ no images found")
-            elif nd != nc:
-                LOGGER.warning(f"{prefix} found {nf} images in {nd} classes: ERROR ❌️ requires {nc} classes, not {nd}")
+    path = Path(dataset.get("path"))
+    if not path.is_absolute():
+        path = (DATASETS_DIR / path).resolve()
+
+    for k in "train", "val", "test":
+        if dataset.get(k):  # prepend path
+            if isinstance(dataset[k], str):
+                x = (path / dataset[k]).resolve()
+                if not x.exists() and dataset[k].startswith("../"):
+                    x = (path / dataset[k][3:]).resolve()
+                dataset[k] = str(x)
             else:
-                LOGGER.info(f"{prefix} found {nf} images in {nd} classes ✅ ")
+                dataset[k] = [str((path / x).resolve()) for x in dataset[k]]
+    dataset['nc'] = nc
+    
+    # # Print to console
+    # for k, v in {"train": dataset['train'], "val": dataset['val'], "test": dataset['test']}.items():
+    #     prefix = f"{colorstr(f'{k}:')} {v}..."
+    #     if v is None:
+    #         LOGGER.info(prefix)
+    #     else:
+    #         files = [x for x in v if (Path(dataset['path']) / Path(x)).is_file()]  # files
+    #         dirs = [x for x in v if (Path(dataset['path']) / Path(x)).is_dir()]  # directories
+    #         files = [path for path in dirs.rglob("*.*") if path.suffix[1:].lower() in IMG_FORMATS]
+    #         nf = len(files)  # number of files
+    #         if nf == 0:
+    #             if k == "train":
+    #                 raise FileNotFoundError(emojis(f"'{k}:' no training images found ❌ "))
+    #             else:
+    #                 LOGGER.warning(f"{prefix} found {nf} images: WARNING ⚠️ no images found")
+    #         else:
+    #             LOGGER.info(f"{prefix} found {nf} images in {nc} classes ✅ ")
+    return dataset
 
-    return {"train": train_set, "val": val_set, "test": test_set, "nc": nc, "names": names}
 
+# class HUBDatasetStats:
+#     """
+#     A class for generating HUB dataset JSON and `-hub` dataset directory.
 
-class HUBDatasetStats:
-    """
-    A class for generating HUB dataset JSON and `-hub` dataset directory.
+#     Args:
+#         path (str): Path to data.yaml or data.zip (with data.yaml inside data.zip). Default is 'coco8.yaml'.
+#         task (str): Dataset task. Options are 'detect', 'segment', 'pose', 'classify'. Default is 'detect'.
+#         autodownload (bool): Attempt to download dataset if not found locally. Default is False.
 
-    Args:
-        path (str): Path to data.yaml or data.zip (with data.yaml inside data.zip). Default is 'coco8.yaml'.
-        task (str): Dataset task. Options are 'detect', 'segment', 'pose', 'classify'. Default is 'detect'.
-        autodownload (bool): Attempt to download dataset if not found locally. Default is False.
+#     Note:
+#         Download *.zip files from https://github.com/ultralytics/hub/tree/main/example_datasets
+#         i.e. https://github.com/ultralytics/hub/raw/main/example_datasets/coco8.zip for coco8.zip.
 
-    Note:
-        Download *.zip files from https://github.com/ultralytics/hub/tree/main/example_datasets
-        i.e. https://github.com/ultralytics/hub/raw/main/example_datasets/coco8.zip for coco8.zip.
+#     Examples:
+#         >>> from ultralytics.data.utils import HUBDatasetStats
+#         >>> stats = HUBDatasetStats("path/to/coco8.zip", task="detect")  # detect dataset
+#         >>> stats = HUBDatasetStats("path/to/coco8-seg.zip", task="segment")  # segment dataset
+#         >>> stats = HUBDatasetStats("path/to/coco8-pose.zip", task="pose")  # pose dataset
+#         >>> stats = HUBDatasetStats("path/to/dota8.zip", task="obb")  # OBB dataset
+#         >>> stats = HUBDatasetStats("path/to/imagenet10.zip", task="classify")  # classification dataset
+#         >>> stats.get_json(save=True)
+#         >>> stats.process_images()
+#     """
 
-    Examples:
-        >>> from ultralytics.data.utils import HUBDatasetStats
-        >>> stats = HUBDatasetStats("path/to/coco8.zip", task="detect")  # detect dataset
-        >>> stats = HUBDatasetStats("path/to/coco8-seg.zip", task="segment")  # segment dataset
-        >>> stats = HUBDatasetStats("path/to/coco8-pose.zip", task="pose")  # pose dataset
-        >>> stats = HUBDatasetStats("path/to/dota8.zip", task="obb")  # OBB dataset
-        >>> stats = HUBDatasetStats("path/to/imagenet10.zip", task="classify")  # classification dataset
-        >>> stats.get_json(save=True)
-        >>> stats.process_images()
-    """
+#     def __init__(self, path="coco8.yaml", task="detect", autodownload=False):
+#         """Initialize class."""
+#         path = Path(path).resolve()
+#         LOGGER.info(f"Starting HUB dataset checks for {path}....")
 
-    def __init__(self, path="coco8.yaml", task="detect", autodownload=False):
-        """Initialize class."""
-        path = Path(path).resolve()
-        LOGGER.info(f"Starting HUB dataset checks for {path}....")
+#         self.task = task  # detect, segment, pose, classify, obb
+#         if self.task == "classify":
+#             unzip_dir = unzip_file(path)
+#             data = check_cls_dataset(unzip_dir)
+#             data["path"] = unzip_dir
+#         else:  # detect, segment, pose, obb
+#             _, data_dir, yaml_path = self._unzip(Path(path))
+#             try:
+#                 # Load YAML with checks
+#                 data = yaml_load(yaml_path)
+#                 data["path"] = ""  # strip path since YAML should be in dataset root for all HUB datasets
+#                 yaml_save(yaml_path, data)
+#                 data = check_det_dataset(yaml_path, autodownload)  # dict
+#                 data["path"] = data_dir  # YAML path should be set to '' (relative) or parent (absolute)
+#             except Exception as e:
+#                 raise Exception("error/HUB/dataset_stats/init") from e
 
-        self.task = task  # detect, segment, pose, classify, obb
-        if self.task == "classify":
-            unzip_dir = unzip_file(path)
-            data = check_cls_dataset(unzip_dir)
-            data["path"] = unzip_dir
-        else:  # detect, segment, pose, obb
-            _, data_dir, yaml_path = self._unzip(Path(path))
-            try:
-                # Load YAML with checks
-                data = yaml_load(yaml_path)
-                data["path"] = ""  # strip path since YAML should be in dataset root for all HUB datasets
-                yaml_save(yaml_path, data)
-                data = check_det_dataset(yaml_path, autodownload)  # dict
-                data["path"] = data_dir  # YAML path should be set to '' (relative) or parent (absolute)
-            except Exception as e:
-                raise Exception("error/HUB/dataset_stats/init") from e
+#         self.hub_dir = Path(f"{data['path']}-hub")
+#         self.im_dir = self.hub_dir / "images"
+#         self.stats = {"nc": len(data["names"]), "names": list(data["names"].values())}  # statistics dictionary
+#         self.data = data
 
-        self.hub_dir = Path(f"{data['path']}-hub")
-        self.im_dir = self.hub_dir / "images"
-        self.stats = {"nc": len(data["names"]), "names": list(data["names"].values())}  # statistics dictionary
-        self.data = data
+#     @staticmethod
+#     def _unzip(path):
+#         """Unzip data.zip."""
+#         if not str(path).endswith(".zip"):  # path is data.yaml
+#             return False, None, path
+#         unzip_dir = unzip_file(path, path=path.parent)
+#         assert unzip_dir.is_dir(), (
+#             f"Error unzipping {path}, {unzip_dir} not found. path/to/abc.zip MUST unzip to path/to/abc/"
+#         )
+#         return True, str(unzip_dir), find_dataset_yaml(unzip_dir)  # zipped, data_dir, yaml_path
 
-    @staticmethod
-    def _unzip(path):
-        """Unzip data.zip."""
-        if not str(path).endswith(".zip"):  # path is data.yaml
-            return False, None, path
-        unzip_dir = unzip_file(path, path=path.parent)
-        assert unzip_dir.is_dir(), (
-            f"Error unzipping {path}, {unzip_dir} not found. path/to/abc.zip MUST unzip to path/to/abc/"
-        )
-        return True, str(unzip_dir), find_dataset_yaml(unzip_dir)  # zipped, data_dir, yaml_path
+#     def _hub_ops(self, f):
+#         """Saves a compressed image for HUB previews."""
+#         compress_one_image(f, self.im_dir / Path(f).name)  # save to dataset-hub
 
-    def _hub_ops(self, f):
-        """Saves a compressed image for HUB previews."""
-        compress_one_image(f, self.im_dir / Path(f).name)  # save to dataset-hub
+#     def get_json(self, save=False, verbose=False):
+#         """Return dataset JSON for Ultralytics HUB."""
 
-    def get_json(self, save=False, verbose=False):
-        """Return dataset JSON for Ultralytics HUB."""
+#         def _round(labels):
+#             """Update labels to integer class and 4 decimal place floats."""
+#             if self.task == "detect":
+#                 coordinates = labels["bboxes"]
+#             elif self.task in {"segment", "obb"}:  # Segment and OBB use segments. OBB segments are normalized xyxyxyxy
+#                 coordinates = [x.flatten() for x in labels["segments"]]
+#             elif self.task == "pose":
+#                 n, nk, nd = labels["keypoints"].shape
+#                 coordinates = np.concatenate((labels["bboxes"], labels["keypoints"].reshape(n, nk * nd)), 1)
+#             else:
+#                 raise ValueError(f"Undefined dataset task={self.task}.")
+#             zipped = zip(labels["cls"], coordinates)
+#             return [[int(c[0]), *(round(float(x), 4) for x in points)] for c, points in zipped]
 
-        def _round(labels):
-            """Update labels to integer class and 4 decimal place floats."""
-            if self.task == "detect":
-                coordinates = labels["bboxes"]
-            elif self.task in {"segment", "obb"}:  # Segment and OBB use segments. OBB segments are normalized xyxyxyxy
-                coordinates = [x.flatten() for x in labels["segments"]]
-            elif self.task == "pose":
-                n, nk, nd = labels["keypoints"].shape
-                coordinates = np.concatenate((labels["bboxes"], labels["keypoints"].reshape(n, nk * nd)), 1)
-            else:
-                raise ValueError(f"Undefined dataset task={self.task}.")
-            zipped = zip(labels["cls"], coordinates)
-            return [[int(c[0]), *(round(float(x), 4) for x in points)] for c, points in zipped]
+#         for split in "train", "val", "test":
+#             self.stats[split] = None  # predefine
+#             path = self.data.get(split)
 
-        for split in "train", "val", "test":
-            self.stats[split] = None  # predefine
-            path = self.data.get(split)
+#             # Check split
+#             if path is None:  # no split
+#                 continue
+#             files = [f for f in Path(path).rglob("*.*") if f.suffix[1:].lower() in IMG_FORMATS]  # image files in split
+#             if not files:  # no images
+#                 continue
 
-            # Check split
-            if path is None:  # no split
-                continue
-            files = [f for f in Path(path).rglob("*.*") if f.suffix[1:].lower() in IMG_FORMATS]  # image files in split
-            if not files:  # no images
-                continue
+#             # Get dataset statistics
+#             if self.task == "classify":
+#                 from torchvision.datasets import ImageFolder  # scope for faster 'import ultralytics'
 
-            # Get dataset statistics
-            if self.task == "classify":
-                from torchvision.datasets import ImageFolder  # scope for faster 'import ultralytics'
+#                 dataset = ImageFolder(self.data[split])
 
-                dataset = ImageFolder(self.data[split])
+#                 x = np.zeros(len(dataset.classes)).astype(int)
+#                 for im in dataset.imgs:
+#                     x[im[1]] += 1
 
-                x = np.zeros(len(dataset.classes)).astype(int)
-                for im in dataset.imgs:
-                    x[im[1]] += 1
+#                 self.stats[split] = {
+#                     "instance_stats": {"total": len(dataset), "per_class": x.tolist()},
+#                     "image_stats": {"total": len(dataset), "unlabelled": 0, "per_class": x.tolist()},
+#                     "labels": [{Path(k).name: v} for k, v in dataset.imgs],
+#                 }
+#             else:
+#                 from flabplatform.flabdet.datasets.yolos import YOLODataset
 
-                self.stats[split] = {
-                    "instance_stats": {"total": len(dataset), "per_class": x.tolist()},
-                    "image_stats": {"total": len(dataset), "unlabelled": 0, "per_class": x.tolist()},
-                    "labels": [{Path(k).name: v} for k, v in dataset.imgs],
-                }
-            else:
-                from flabplatform.flabdet.datasets.yolos import YOLODataset
+#                 dataset = YOLODataset(img_path=self.data[split], data=self.data, task=self.task)
+#                 x = np.array(
+#                     [
+#                         np.bincount(label["cls"].astype(int).flatten(), minlength=self.data["nc"])
+#                         for label in TQDM(dataset.labels, total=len(dataset), desc="Statistics")
+#                     ]
+#                 )  # shape(128x80)
+#                 self.stats[split] = {
+#                     "instance_stats": {"total": int(x.sum()), "per_class": x.sum(0).tolist()},
+#                     "image_stats": {
+#                         "total": len(dataset),
+#                         "unlabelled": int(np.all(x == 0, 1).sum()),
+#                         "per_class": (x > 0).sum(0).tolist(),
+#                     },
+#                     "labels": [{Path(k).name: _round(v)} for k, v in zip(dataset.im_files, dataset.labels)],
+#                 }
 
-                dataset = YOLODataset(img_path=self.data[split], data=self.data, task=self.task)
-                x = np.array(
-                    [
-                        np.bincount(label["cls"].astype(int).flatten(), minlength=self.data["nc"])
-                        for label in TQDM(dataset.labels, total=len(dataset), desc="Statistics")
-                    ]
-                )  # shape(128x80)
-                self.stats[split] = {
-                    "instance_stats": {"total": int(x.sum()), "per_class": x.sum(0).tolist()},
-                    "image_stats": {
-                        "total": len(dataset),
-                        "unlabelled": int(np.all(x == 0, 1).sum()),
-                        "per_class": (x > 0).sum(0).tolist(),
-                    },
-                    "labels": [{Path(k).name: _round(v)} for k, v in zip(dataset.im_files, dataset.labels)],
-                }
+#         # Save, print and return
+#         if save:
+#             self.hub_dir.mkdir(parents=True, exist_ok=True)  # makes dataset-hub/
+#             stats_path = self.hub_dir / "stats.json"
+#             LOGGER.info(f"Saving {stats_path.resolve()}...")
+#             with open(stats_path, "w", encoding="utf-8") as f:
+#                 json.dump(self.stats, f)  # save stats.json
+#         if verbose:
+#             LOGGER.info(json.dumps(self.stats, indent=2, sort_keys=False))
+#         return self.stats
 
-        # Save, print and return
-        if save:
-            self.hub_dir.mkdir(parents=True, exist_ok=True)  # makes dataset-hub/
-            stats_path = self.hub_dir / "stats.json"
-            LOGGER.info(f"Saving {stats_path.resolve()}...")
-            with open(stats_path, "w", encoding="utf-8") as f:
-                json.dump(self.stats, f)  # save stats.json
-        if verbose:
-            LOGGER.info(json.dumps(self.stats, indent=2, sort_keys=False))
-        return self.stats
+#     def process_images(self):
+#         """Compress images for Ultralytics HUB."""
+#         # from ultralytics.data import YOLODataset  # ClassificationDataset
+#         from flabplatform.flabdet.datasets.yolos import YOLODataset
 
-    def process_images(self):
-        """Compress images for Ultralytics HUB."""
-        # from ultralytics.data import YOLODataset  # ClassificationDataset
-        from flabplatform.flabdet.datasets.yolos import YOLODataset
-
-        self.im_dir.mkdir(parents=True, exist_ok=True)  # makes dataset-hub/images/
-        for split in "train", "val", "test":
-            if self.data.get(split) is None:
-                continue
-            dataset = YOLODataset(img_path=self.data[split], data=self.data)
-            with ThreadPool(NUM_THREADS) as pool:
-                for _ in TQDM(pool.imap(self._hub_ops, dataset.im_files), total=len(dataset), desc=f"{split} images"):
-                    pass
-        LOGGER.info(f"Done. All images saved to {self.im_dir}")
-        return self.im_dir
+#         self.im_dir.mkdir(parents=True, exist_ok=True)  # makes dataset-hub/images/
+#         for split in "train", "val", "test":
+#             if self.data.get(split) is None:
+#                 continue
+#             dataset = YOLODataset(img_path=self.data[split], data=self.data)
+#             with ThreadPool(NUM_THREADS) as pool:
+#                 for _ in TQDM(pool.imap(self._hub_ops, dataset.im_files), total=len(dataset), desc=f"{split} images"):
+#                     pass
+#         LOGGER.info(f"Done. All images saved to {self.im_dir}")
+#         return self.im_dir
 
 
 def compress_one_image(f, f_new=None, max_dim=1920, quality=50):

@@ -17,7 +17,6 @@ import requests
 import torch
 
 from flabplatform.flabdet.utils.yolos import (
-    ARM64,
     ASSETS,
     IS_GIT_DIR,
     IS_PIP_PACKAGE,
@@ -27,7 +26,6 @@ from flabplatform.flabdet.utils.yolos import (
     PYTHON_VERSION,
     YOLO_ROOT,
     TORCHVISION_VERSION,
-    USER_CONFIG_DIR,
     WINDOWS,
     Retry,
     SimpleNamespace,
@@ -35,7 +33,6 @@ from flabplatform.flabdet.utils.yolos import (
     TryExcept,
     clean_url,
     colorstr,
-    # downloads,
     emojis,
     is_github_action_running,
     url2file,
@@ -721,7 +718,7 @@ def check_amp(model):
     LOGGER.info(f"{prefix}running Automatic Mixed Precision (AMP) checks...")
     warning_msg = "Setting 'amp=True'. If you experience zero-mAP or NaN losses you can disable AMP with amp=False."
     try:
-        from flabplatform.core import YOLORunnerWarpper
+        from flabplatform.core.engine import YOLORunnerWarpper
         overrides = {"model": "yolo11n.pt", "amp": True, "device": device, "pretrainDir": "", "num_classes": 80 }  # overrides for YOLORunnerWarpper
 
         assert amp_allclose(YOLORunnerWarpper(overrides), im)

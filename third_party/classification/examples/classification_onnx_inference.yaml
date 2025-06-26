@@ -1,0 +1,13 @@
+model_path: "/root/project/research/classification/examples/models/fdcv_classification_mobilenetv4/base_model.onnx"
+input_size: [224, 224]
+mean: [0.485, 0.456, 0.406]
+std: [0.229, 0.224, 0.225]
+provider: "CUDAExecutionProvider"
+
+labels:
+  - "goldfish"
+  - "great_white_shark"
+  - "tiger_shark"
+  - "hammerhead"
+  - "electric_ray"
+  - "stingray"

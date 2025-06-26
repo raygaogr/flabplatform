@@ -1,4 +1,3 @@
-# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 import glob
 import math
@@ -18,8 +17,7 @@ from PIL import Image
 from flabplatform.flabdet.datasets.yolos.utils  import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
 from flabplatform.flabdet.utils.yolos import LOGGER
 from ultralytics.utils import ops
-from flabplatform.flabdet.utils.yolos.checks import check_requirements
-from ultralytics.utils.patches import imread
+from flabplatform.flabdet.utils.yolos.patches import imread
 
 
 @dataclass
@@ -245,7 +243,6 @@ class LoadScreenshots:
 
     def __init__(self, source):
         """Initialize screenshot capture with specified screen and region parameters."""
-        check_requirements("mss")
         import mss  # noqa
 
         source, *params = source.split()
@@ -627,7 +624,6 @@ def get_best_youtube_url(url, method="pytube"):
     """
     if method == "pytube":
         # Switched from pytube to pytubefix to resolve https://github.com/pytube/pytube/issues/1954
-        check_requirements("pytubefix>=6.5.2")
         from pytubefix import YouTube
 
         streams = YouTube(url).streams.filter(file_extension="mp4", only_video=True)
@@ -637,13 +633,11 @@ def get_best_youtube_url(url, method="pytube"):
                 return stream.url
 
     elif method == "pafy":
-        check_requirements(("pafy", "youtube_dl==2020.12.2"))
         import pafy  # noqa
 
         return pafy.new(url).getbestvideo(preftype="mp4").url
 
     elif method == "yt-dlp":
-        check_requirements("yt-dlp")
         import yt_dlp
 
         with yt_dlp.YoutubeDL({"quiet": True}) as ydl:

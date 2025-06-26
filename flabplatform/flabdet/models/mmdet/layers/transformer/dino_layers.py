@@ -7,7 +7,7 @@ from torch import Tensor, nn
 
 from flabplatform.flabdet.utils.mmdet.structures import SampleList
 from flabplatform.flabdet.utils.mmdet.structures.bbox import bbox_xyxy_to_cxcywh
-from flabplatform.flabdet.utils import OptConfigType
+from flabplatform.flabdet.utils.mmdet import OptConfigType
 from .deformable_detr_layers import DeformableDetrTransformerDecoder
 from .utils import MLP, coordinate_to_encoding, inverse_sigmoid
 

@@ -24,46 +24,6 @@ from flabplatform.flabdet.utils.yolos import (
     deprecation_warn,
     yaml_load
     )
-# from ultralytics.utils import (
-#     # ASSETS,
-#     # DEFAULT_CFG,
-#     DEFAULT_CFG_DICT,
-#     DEFAULT_CFG_PATH,
-#     # DEFAULT_SOL_DICT,
-#     # IS_VSCODE,
-#     LOGGER,
-#     RANK,
-#     ROOT,
-#     RUNS_DIR,
-#     SETTINGS,
-#     SETTINGS_FILE,
-#     TESTS_RUNNING,
-#     IterableSimpleNamespace,
-#     __version__,
-#     # checks,
-#     colorstr,
-#     deprecation_warn,
-#     # vscode_msg,
-#     yaml_load,
-#     # yaml_print,
-# )
-
-# # Define valid solutions
-# SOLUTION_MAP = {
-#     "count": "ObjectCounter",
-#     "crop": "ObjectCropper",
-#     "blur": "ObjectBlurrer",
-#     "workout": "AIGym",
-#     "heatmap": "Heatmap",
-#     "isegment": "InstanceSegmentation",
-#     "visioneye": "VisionEye",
-#     "speed": "SpeedEstimator",
-#     "queue": "QueueManager",
-#     "analytics": "Analytics",
-#     "inference": "Inference",
-#     "trackzone": "TrackZone",
-#     "help": None,
-# }
 
 # Define valid tasks and modes
 MODES = frozenset({"train", "val", "predict", "export", "track", "benchmark"})

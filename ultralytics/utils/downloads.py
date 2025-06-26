@@ -13,8 +13,7 @@ import torch
 
 # from ultralytics.utils import LOGGER, TQDM, checks, clean_url, emojis, url2file
 
-from flabplatform.flabdet.utils.yolos import LOGGER, TQDM, clean_url, emojis, url2file
-from flabplatform.flabdet.utils.yolos import checks
+from flabplatform.flabdet.utils.yolos import LOGGER, TQDM, clean_url, emojis, url2file, checks, ASSETS
 
 # Define Ultralytics GitHub assets maintained at https://github.com/ultralytics/assets
 GITHUB_ASSETS_REPO = "ultralytics/assets"
@@ -424,7 +423,7 @@ def attempt_download_asset(file, repo="ultralytics/assets", release="v8.3.0", **
     file = str(file)
     file = checks.check_yolov5u_filename(file)
     file = Path(file.strip().replace("'", ""))
-    models_dir = Path("models")
+    models_dir = ASSETS.parent / "models"
     if file.exists():
         return str(file)
     elif (models_dir / file).exists():

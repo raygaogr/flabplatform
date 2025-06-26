@@ -26,7 +26,7 @@ class AiAnnotation:
                 "security.protocol": "SASL_PLAINTEXT",
                 "sasl.mechanism": "GSSAPI",
                 "sasl.kerberos.service.name": "kafka",
-                "sasl.kerberos.keytab": "config/fdt.dfs.keytab",
+                "sasl.kerberos.keytab": "configs/fdt.dfs.keytab",
                 "sasl.kerberos.principal": "fdt.dfs@BYD.COM"
             },
             "producer_topic": self.topic,
@@ -220,6 +220,9 @@ def create_runner(args):
     if 'yolo' in modelname:
         from .yolorunner import YOLORunnerWarpper
         return YOLORunnerWarpper.from_cfg(cfg)
+    elif 'classifier' in modelname.lower() or 'classify' in modelname.lower():
+        from .classificationrunner import ClassificationRunner
+        return ClassificationRunner.from_cfg(cfg)
     else:
         from .mmrunner import MMRunner
         cfg = merge_args(cfg, args)

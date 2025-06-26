@@ -4,9 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, List, Union
 
-from flabplatform.flabdet.utils.yolos import YOLO_ROOT
-
-from flabplatform.flabdet.utils import (
+from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG_DICT,
     YOLO_DEFAULT_CFG_PATH,
     LOGGER,
@@ -19,6 +17,7 @@ from flabplatform.flabdet.utils import (
     colorstr,
     deprecation_warn,
     yaml_load,
+    YOLO_ROOT
 )
 
 # Define valid tasks and modes

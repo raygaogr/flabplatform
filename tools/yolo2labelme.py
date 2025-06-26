@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import cv2
 import json
+from pathlib import Path
 
 # 可以将yolov8目标检测生成的txt格式的标注转为json，可以使用labelme查看标注
 # 该方法可以用于辅助数据标注
@@ -30,6 +31,8 @@ def convert_txt_to_labelme_json(txt_path, image_path, output_dir, class_name, im
             'imageData': None,
             'imageHeight': None,
             'imageWidth': None,
+            'mask': None,
+            'labelObj': {},
         }
         # 获取文本文件名
         txt_name = os.path.basename(txt)
@@ -83,12 +86,9 @@ def convert_txt_to_labelme_json(txt_path, image_path, output_dir, class_name, im
                     'points': point_list,
                     'group_id': None,
                     'description': None,
-                    'shape_type': 'rectangle',
+                    'shape_type': 'rectangle' if is_detect else 'polygon',
                     'flags': {},
-                    'mask': None
                 }
-                if not is_detect:
-                    shape["shape_type"] = "polygon"
                 labelme_json['shapes'].append(shape)
             # 生成JSON文件名
             json_name = txt_name.split('.')[0] + '.json'
@@ -99,24 +99,85 @@ def convert_txt_to_labelme_json(txt_path, image_path, output_dir, class_name, im
             fd.close()
             # 输出保存信息
             print("save json={}".format(json_name_path))
- 
+
+
+def convert_dir_to_labelme_json(dir_path, img_output_dir, label_output_dir):
+    """
+    将目录下的所有文本文件转换为LabelMe格式的JSON文件。
+    :param dir_path: 包含文本文件的目录路径
+    :param output_dir: 输出JSON文件的目录
+    :param class_name: 类别名称列表，索引对应类别ID
+    """
+    if not os.path.exists(img_output_dir):
+        os.makedirs(img_output_dir)
+    if not os.path.exists(label_output_dir):
+        os.makedirs(label_output_dir)
+    names = [x.name for x in (Path(dir_path)).iterdir() if x.is_dir()]
+    for name in names:
+        single_lbl_dir = os.path.join(dir_path, name)
+        for img_path in glob.glob(os.path.join(single_lbl_dir, "*.JPEG")):
+            labelme_json = {
+                'version': '5.5.0',
+                'flags': {},
+                'shapes': [],
+                'imagePath': None,
+                'imageData': None,
+                'imageHeight': None,
+                'imageWidth': None,
+                'mask': None,
+                'labelObj': {},
+            }
+            image_name = os.path.basename(img_path)
+            labelme_json['imagePath'] = image_name
+            # 读取图像
+            image = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+            cv2.imwrite(os.path.join(img_output_dir, image_name), image)
+            # 获取图像高度和宽度
+            h, w = image.shape[:2]
+            labelme_json['imageHeight'] = h
+            labelme_json['imageWidth'] = w
+            shape = {
+                'label': name,
+                'points': [],
+                'group_id': None,
+                'description': None,
+                'shape_type': 'classification',
+                'flags': {},
+            }
+            labelme_json['shapes'].append(shape)
+
+            json_name = image_name.split('.')[0] + '.json'
+            json_name_path = os.path.join(label_output_dir, json_name)
+            fd = open(json_name_path, 'w')
+            json.dump(labelme_json, fd, indent=2)
+            fd.close()
+            # 输出保存信息
+            print("save json={}".format(json_name_path))
+
+
+
 if __name__ == '__main__':
-    txt_path = 'datasets/coco8-seg/labels/train'
-    image_path = 'datasets/coco8-seg/images/train'
-    output_dir = 'datasets/coco8-seg/labels/train'
+    # txt_path = 'datasets/coco8-seg/labels/train'
+    # image_path = 'datasets/coco8-seg/images/train'
+    # output_dir = 'datasets/coco8-seg/labels/train'
     
-    # 标签列表
-    yolo_class_name = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
-         'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-         'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep',
-         'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-         'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard',
-         'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard',
-         'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork',
-         'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
-         'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-         'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
-         'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
-         'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-         'scissors', 'teddy bear', 'hair drier', 'toothbrush']  # 标签类别名
-    convert_txt_to_labelme_json(txt_path, image_path, output_dir, yolo_class_name, is_detect=False)
+    # # 标签列表
+    # yolo_class_name = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
+    #      'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
+    #      'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep',
+    #      'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
+    #      'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard',
+    #      'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard',
+    #      'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork',
+    #      'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
+    #      'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+    #      'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
+    #      'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+    #      'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
+    #      'scissors', 'teddy bear', 'hair drier', 'toothbrush']  # 标签类别名
+    # convert_txt_to_labelme_json(txt_path, image_path, output_dir, yolo_class_name, is_detect=False)
+    img_dir = 'datasets/imagenet10/val'
+    img_output_dir = 'datasets/imagenet10/image'
+    label_output_dir = 'datasets/imagenet10/label'
+
+    convert_dir_to_labelme_json(img_dir, img_output_dir, label_output_dir)

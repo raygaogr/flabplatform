@@ -8,12 +8,11 @@ import numpy as np
 import torch
 from PIL import Image
 
-from ultralytics.cfg import TASK2DATA, get_cfg, get_save_dir
+from flabplatform.flabdet.configs import get_cfg, get_save_dir, TASK2DATA
 from ultralytics.engine.results import Results
 from ultralytics.utils import (
     callbacks
 )
-from flabplatform.flabdet.utils.yolos import checks
 from flabplatform.flabdet.utils.yolos import (
     ARGV,
     ASSETS,
@@ -22,6 +21,7 @@ from flabplatform.flabdet.utils.yolos import (
     RANK,
     emojis,
     yaml_load,
+    checks
 )
 from flabplatform.flabdet.models import attempt_load_one_weight, guess_model_task, yaml_model_load
 

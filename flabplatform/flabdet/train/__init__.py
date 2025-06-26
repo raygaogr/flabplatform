@@ -1,3 +1,3 @@
-from .yolotrainer import DetectionTrainer
+from .yolotrainer import DetectionTrainer, BaseTrainer
 
-__all__ = ["DetectionTrainer"]
+__all__ = ["DetectionTrainer", "BaseTrainer"]

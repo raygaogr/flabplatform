@@ -17,19 +17,7 @@ from pathlib import Path
 from typing import Optional
 import psutil
 
-from ultralytics.utils.ops import resample_segments, segments2boxes
-from ultralytics.utils.torch_utils import TORCHVISION_0_18
-from ultralytics.data.augment import (
-    Compose,
-    Format,
-    Instances,
-    LetterBox,
-    RandomLoadText,
-    classify_augmentations,
-    classify_transforms,
-    v8_transforms,
-)
-from ultralytics.data.converter import merge_multi_segment
+from flabplatform.flabdet.utils.yolos import LOCAL_RANK, NUM_THREADS, TQDM, colorstr, DEFAULT_CFG, LOGGER
 from flabplatform.flabdet.datasets.yolos.utils import (
     get_hash,
     img2label_paths,
@@ -44,7 +32,7 @@ from flabplatform.flabdet.datasets.yolos.utils import (
 )
 
 DATASET_CACHE_VERSION = "1.0.3"
-from flabplatform.flabdet.utils.yolos import LOCAL_RANK, NUM_THREADS, TQDM, colorstr, DEFAULT_CFG, LOGGER
+
 from flabplatform.flabdet.registry import DATASETS
 
 class BaseDataset(Dataset):
@@ -639,6 +627,12 @@ class YOLODataset(BaseDataset):
         Returns:
             (Compose): Composed transforms.
         """
+        from ultralytics.data.augment import (
+            Compose,
+            Format,
+            LetterBox,
+            v8_transforms
+        )
         if self.augment: # mosaic和mixup需要关掉rect模式
             hyp.mosaic = hyp.mosaic if self.augment and not self.rect else 0.0
             hyp.mixup = hyp.mixup if self.augment and not self.rect else 0.0
@@ -686,6 +680,8 @@ class YOLODataset(BaseDataset):
             cls is not with bboxes now, classification and semantic segmentation need an independent cls label
             Can also support classification and semantic segmentation by adding or removing dict keys there.
         """
+        from ultralytics.data.augment import Instances
+
         bboxes = label.pop("bboxes")
         segments = label.pop("segments", [])
         keypoints = label.pop("keypoints", None)
@@ -699,6 +695,7 @@ class YOLODataset(BaseDataset):
             max_len = max(len(s) for s in segments)
             segment_resamples = (max_len + 1) if segment_resamples < max_len else segment_resamples
             # list[np.array(segment_resamples, 2)] * num_samples
+            from ultralytics.utils.ops import resample_segments
             segments = np.stack(resample_segments(segments, n=segment_resamples), axis=0)
         else:
             segments = np.zeros((0, segment_resamples, 2), dtype=np.float32)
@@ -794,6 +791,8 @@ class YOLOMultiModalDataset(YOLODataset):
             (Compose): Composed transforms including text augmentation if applicable.
         """
         transforms = super().build_transforms(hyp)
+        from ultralytics.data.augment import  RandomLoadText
+
         if self.augment:
             # NOTE: hard-coded the args for now.
             # NOTE: this implementation is different from official yoloe,
@@ -953,6 +952,7 @@ class GroundingDataset(YOLODataset):
                             segments.append(box)
                             continue
                         elif len(ann["segmentation"]) > 1:
+                            from ultralytics.data.converter import merge_multi_segment
                             s = merge_multi_segment(ann["segmentation"])
                             s = (np.concatenate(s, axis=0) / np.array([w, h], dtype=np.float32)).reshape(-1).tolist()
                         else:
@@ -965,7 +965,7 @@ class GroundingDataset(YOLODataset):
                         s = [cls] + s
                         segments.append(s)
             lb = np.array(bboxes, dtype=np.float32) if len(bboxes) else np.zeros((0, 5), dtype=np.float32)
-
+            from ultralytics.utils.ops import segments2boxes
             if segments:
                 classes = np.array([x[0] for x in segments], dtype=np.float32)
                 segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in segments]  # (cls, xy1...)
@@ -1021,6 +1021,7 @@ class GroundingDataset(YOLODataset):
             (Compose): Composed transforms including text augmentation if applicable.
         """
         transforms = super().build_transforms(hyp)
+        from ultralytics.data.augment import RandomLoadText
         if self.augment:
             # NOTE: hard-coded the args for now.
             # NOTE: this implementation is different from official yoloe,
@@ -1142,6 +1143,8 @@ class ClassificationDataset:
             prefix (str, optional): Prefix for logging and cache filenames, aiding in dataset identification.
         """
         import torchvision  # scope for faster 'import ultralytics'
+        from ultralytics.utils.torch_utils import TORCHVISION_0_18
+        from ultralytics.data.augment import classify_augmentations, classify_transforms
 
         # Base class assigned as attribute rather than used as base class to allow for scoping slow torchvision import
         if TORCHVISION_0_18:  # 'allow_empty' argument first introduced in torchvision 0.18

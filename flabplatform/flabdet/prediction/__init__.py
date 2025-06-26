@@ -1,3 +1,3 @@
-from .yolopredictor import DetectionPredictor
+from .yolopredictor import DetectionPredictor, BasePredictor
 
-__all__ = ["DetectionPredictor"]
+__all__ = ["DetectionPredictor", "BasePredictor"]

@@ -24,8 +24,8 @@ import torch
 import tqdm
 import yaml
 
-from ultralytics.utils.patches import imread, imshow, imwrite, torch_load, torch_save  # for patches
-from flabplatform.core.logging import MMLogger
+from flabplatform.flabdet.utils.yolos.patches import imread, imshow, imwrite, torch_load, torch_save  # for patches
+
 import logging
 
 # PyTorch Multi-GPU DDP Constants
@@ -364,7 +364,7 @@ def set_logging(name="LOGGING_NAME", verbose=True):
         - The logger's propagate flag is set to False to prevent duplicate logging in parent loggers.
     """
     level = "INFO" if verbose and RANK in {-1, 0} else "ERROR"  # rank in world for Multi-GPU trainings
-
+    from flabplatform.core.logging import MMLogger
     logger = MMLogger(name=name, logger_name=name, log_level=level)  # MMLogger for logging
     return logger
 

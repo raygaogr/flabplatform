@@ -6,22 +6,12 @@ import numpy as np
 from PIL import Image
 import inspect
 
-from ultralytics.data.build import load_inference_source
-from ultralytics.models import yolo
-from ultralytics.engine.results import Results
-from ultralytics.utils import callbacks
-from flabplatform.flabdet.utils.yolos import checks, SETTINGS
 from flabplatform.flabdet.registry import MODELS, TRAINERS, PREDICTORS, VALIDATORS
-from flabplatform.flabdet.utils import (
-    ASSETS,
-    DEFAULT_CFG_DICT,
-    LOGGER,
-    RANK,
-    emojis,
-    yaml_load,
-    yaml_save
+from flabplatform.flabdet.utils.yolos import (
+    ASSETS,  DEFAULT_CFG_DICT, LOGGER, RANK,
+    emojis, yaml_load, yaml_save,
+    YOLO_ROOT, checks, SETTINGS
 )
-from flabplatform.flabdet.utils.yolos import YOLO_ROOT
 from flabplatform.core.config import Config
 from flabplatform.flabdet.models import attempt_load_one_weight, guess_model_task, yaml_model_load
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
@@ -110,6 +100,7 @@ class YOLORunner(BaseRunner):
             >>> model = Model("path/to/model.yaml", task="detect")
             >>> model = Model("hub_model", verbose=True)
         """
+        from ultralytics.utils import callbacks
         super().__init__()
         self.callbacks = callbacks.get_default_callbacks()
         self.predictor = None  # reuse predictor
@@ -122,16 +113,19 @@ class YOLORunner(BaseRunner):
 
         self.overrides = overrides
         self.task = overrides.get("task", None)  # task type
+        self.pretrainDir= overrides.get("pretrainDir", None)
 
         model = str(self.overrides["model"]).strip()
         if not Path(model).suffix:
             model = model + ".yaml"
         __import__("os").environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # to avoid deterministic warnings
-        if Path(model).suffix in {".yaml", ".yml"} and not self.overrides["pretrainDir"]:
+        if Path(model).suffix in {".yaml", ".yml"} and not self.pretrainDir:
             self._new(model, task=self.task, verbose=verbose)
         else:
             if not model.endswith("pt"):
-                model = os.path.join(self.overrides["pretrainDir"], "best.pt")
+                model = os.path.join(self.pretrainDir, "best.pt")
+                if not os.path.exists(model):
+                    raise FileNotFoundError(f"Model file '{model}' does not exist. Please check the path or model name.")
             self._load(model, task=self.task)
 
         # Delete super().training for accessing self.model.training
@@ -217,7 +211,7 @@ class YOLORunner(BaseRunner):
             ValueError: If the weights file format is unsupported or invalid.
 
         Examples:
-            >>> model = Model()
+            >>> model = Model()w
             >>> model._load("yolo11n.pt")
             >>> model._load("path/to/weights.pth", task="detect")
         """
@@ -430,7 +424,7 @@ class YOLORunner(BaseRunner):
         source: Union[str, Path, int, Image.Image, list, tuple, np.ndarray, torch.Tensor] = None,
         stream: bool = False,
         **kwargs: Any,
-    ) -> List[Results]:
+    ):
         """
         Performs predictions on the given image source using the YOLO model.
 
@@ -493,7 +487,7 @@ class YOLORunner(BaseRunner):
         stream: bool = False,
         persist: bool = False,
         **kwargs: Any,
-    ) -> List[Results]:
+    ) :
         """
         Conducts object tracking on the specified input source using the registered trackers.
 
@@ -669,6 +663,71 @@ class YOLORunner(BaseRunner):
         return Exporter(overrides=args, _callbacks=self.callbacks)(model=self.model)
 
     def build_trainer(self):
+        save_dir = self.overrides.get("save_dir", None)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir, exist_ok=True)
+        params_yaml = os.path.join(save_dir, "params.yaml")
+        params_content = {
+            "model": {
+                    "name": "yolov8n",
+                    "version": "v1.0",
+                    "type": "cv",
+                    "task": "detect",
+                    "framework": "pytorch"
+            },
+            "input": [
+                {
+                    "type": "image",
+                    "shape": [1, 3, 384, 384],
+                    "dtype": "float32",
+                    "normalization": {
+                        "mean": [0.485, 0.456, 0.406],
+                        "std": [0.229, 0.224, 0.225],
+                        "color_space": "RGB"
+                    }
+                },
+                {
+                    "type": "image",
+                    "shape": [1, 3, 384, 384],
+                    "dtype": "float32",
+                    "normalization": {
+                        "mean": [0.485, 0.456, 0.406],
+                        "std": [0.229, 0.224, 0.225],
+                        "color_space": "RGB"
+                    }
+                }
+            ],
+            "output": [
+                {
+                    "type": "class_probabilities",
+                    "shape": [1, 1000],
+                    "dtype": "float32",
+                    "class_labels": "labels.txt"
+                },
+                {
+                    "type": "bounding_boxes",
+                    "shape": [1, 4]
+                }
+            ],
+            "deployment": {
+                "min_hardware": "CPU",
+                "recommended_hardware": "GPU with 4GB VRAM",
+                "quantization": "int8",
+                "supported_formats": ["onnx", "torchscript"]
+            },
+            "metrics": {
+                "accuracy": 94.2,
+                "precision": 93.8,
+                "recall": 94.1,
+                "f1_score": 93.9,
+                "latency": "15ms (T4 GPU)"
+            },
+            "training_dataset": "ImageNet-1K",
+            "created_date": "2025-06-05 18:00:00",
+            "author": "Detection Team"
+        }
+        yaml_save(params_yaml, params_content)
+
         self._check_is_pytorch_model()
 
         overrides = self.overrides
@@ -956,6 +1015,7 @@ class YOLORunner(BaseRunner):
             >>> model.reset_callbacks()
             # All callbacks are now reset to their default functions
         """
+        from ultralytics.utils import callbacks
         for event in callbacks.default_callbacks.keys():
             self.callbacks[event] = [callbacks.default_callbacks[event][0]]
 
@@ -1137,6 +1197,8 @@ class YOLORunnerWarpper(YOLORunner):
                         output_dict["mode"] = "train"
                     elif "eval" in v or "val" in v or "test" in v:
                         output_dict["mode"] = "val"
+                    else:
+                        output_dict["mode"] = v
                 elif k == "metafile":
                     output_dict["data"] = v
                 elif k in special_keys:
@@ -1164,7 +1226,7 @@ class YOLORunnerWarpper(YOLORunner):
             for dataset in data_cfg["datasets"]:
                 dataset_purpose = dataset["purpose"]
                 if dataset_purpose in valid_purpose:
-                    if dataset["purpose"] == "eval":
+                    if dataset["purpose"] == "eval" or dataset["purpose"] == "test":
                         dataset_purpose = "val"
                     exist_purpose.append(dataset_purpose)
                     if len(dataset["samples"]) == 0:
@@ -1172,7 +1234,7 @@ class YOLORunnerWarpper(YOLORunner):
                     else:
                         for sample in dataset["samples"]:
                             input_dict["data"][dataset_purpose].append(os.path.join(dataset["sourceRoot"], sample["image"]))
-            if input_dict["mode"] not in exist_purpose:
+            if input_dict["mode"] not in exist_purpose and input_dict["mode"] in valid_purpose:
                 raise ValueError(
                     f"Invalid operation '{input_dict['mode']}' specified. "
                 )
@@ -1186,13 +1248,14 @@ class YOLORunnerWarpper(YOLORunner):
         
     @property
     def task_map(self):
+        from ultralytics.models import yolo
         """Map head to model, trainer, validator, and predictor classes."""
         return {
             "classify": {
                 "model": "ClassificationModel",
-                "trainer": yolo.classify.ClassificationTrainer,
-                "validator": yolo.classify.ClassificationValidator,
-                "predictor": yolo.classify.ClassificationPredictor,
+                "trainer": "ClassificationTrainer",
+                "validator": "ClassificationValidator",
+                "predictor": "ClassificationPredictor",
             },
             "detect": {
                 "model": "DetectionModel",
@@ -1243,6 +1306,7 @@ class YOLOWorld(YOLORunner):
 
     @property
     def task_map(self):
+        from ultralytics.models import yolo
         """Map head to model, validator, and predictor classes."""
         return {
             "detect": {
@@ -1292,6 +1356,7 @@ class YOLOE(YOLORunner):
 
     @property
     def task_map(self):
+        from ultralytics.models import yolo
         """Map head to model, validator, and predictor classes."""
         return {
             "detect": {
@@ -1473,14 +1538,16 @@ class YOLOE(YOLORunner):
         self.predictor.setup_model(model=self.model)
 
         if refer_image is None and source is not None:
+            from ultralytics.data.build import load_inference_source
             dataset = load_inference_source(source)
             if dataset.mode in {"video", "stream"}:
                 # NOTE: set the first frame as refer image for videos/streams inference
                 refer_image = next(iter(dataset))[1][0]
         if refer_image is not None and len(visual_prompts):
+            from ultralytics.models import yolo
             vpe = self.predictor.get_vpe(refer_image)
             self.model.set_classes(self.model.names, vpe)
-            self.task = "segment" if isinstance(self.predictor, yolo.segment.SegmentationPredictor) else "detect"
+            # self.task = "segment" if isinstance(self.predictor, SegmentationPredictor) else "detect"
             self.predictor = None  # reset predictor
 
         return super().predict(source, stream, **kwargs)

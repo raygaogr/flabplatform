@@ -90,7 +90,7 @@ from ultralytics.utils.torch_utils import (
     time_sync,
 )
 
-from flabplatform.flabdet.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from flabplatform.flabdet.registry import MODELS
 
 

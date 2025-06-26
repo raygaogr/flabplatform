@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Union
 import numpy as np
 from PIL import Image
-from ultralytics.engine.results import Results
 from abc import ABCMeta, abstractmethod
 from flabplatform.core.config import Config
 
@@ -23,7 +22,7 @@ class BaseRunner(nn.Module, metaclass=ABCMeta):
     def __call__(
         self, 
         source: Union[str, Path, int, Image.Image, list, tuple, np.ndarray, torch.Tensor] = None,
-        **kwargs: Any) -> List[Union[Results, Dict]]:
+        **kwargs: Any) -> List[Union[Dict]]:
         """Run the model."""
         return self.predict(source, **kwargs)
 
@@ -32,7 +31,7 @@ class BaseRunner(nn.Module, metaclass=ABCMeta):
         self,
         source: Union[str, Path, int, Image.Image, list, tuple, np.ndarray, torch.Tensor] = None,
         **kwargs: Any
-    ) -> List[Union[Results, Dict]]:
+    ) -> List[Union[Dict]]:
         """Predict the model."""
         pass
     

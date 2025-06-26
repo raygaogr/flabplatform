@@ -62,7 +62,7 @@ def get_cfg(config_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Tools for train/eval/test a model')
-    parser.add_argument('config', help='The config file path')
+    parser.add_argument('--config', type=str, default="/mnt/jobs/params.json", help='The config file path')
     args = parser.parse_args()
     return args
 
@@ -88,7 +88,6 @@ def main():
     elif operation == "eval" or operation == "test":
         # 验证评估：
         val_res = runner.val()
-        print(val_res)
     elif operation == "aiannotation":
         # AI标注：
         aianno = AiAnnotation(cfg)

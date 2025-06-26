@@ -13,9 +13,6 @@ import torch
 from torch import distributed as dist
 from torch import nn, optim
 
-from ultralytics.data import build_dataloader #, build_yolo_dataset
-from flabplatform.flabdet.datasets.yolos.utils  import check_cls_dataset, check_det_dataset
-
 from ultralytics.utils import callbacks
 from ultralytics.utils.autobatch import check_train_batch_size
 from ultralytics.utils.dist import ddp_cleanup, generate_ddp_command
@@ -39,7 +36,7 @@ from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check
 
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
 from flabplatform.flabdet.models import DetectionModel, attempt_load_one_weight, attempt_load_weights
-from flabplatform.flabdet.utils import (
+from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG,
     LOCAL_RANK,
     LOGGER,
@@ -53,6 +50,7 @@ from flabplatform.flabdet.utils import (
 )
 from flabplatform import __version__
 from flabplatform.flabdet.registry import TRAINERS, VALIDATORS, DATASETS, MODELS
+from ultralytics.data import build_dataloader #, build_yolo_dataset
 
 class BaseTrainer:
     """
@@ -115,7 +113,7 @@ class BaseTrainer:
         if RANK in {-1, 0}:
             self.wdir.mkdir(parents=True, exist_ok=True)  # make dir
             self.args.save_dir = str(self.save_dir)
-            yaml_save(self.save_dir / "args.yaml", vars(self.args))  # save run args
+            # yaml_save(self.save_dir / "args.yaml", vars(self.args))  # save run args
         self.last, self.best = self.wdir / "last.pt", self.wdir / "best.pt"  # checkpoint paths
         self.save_period = self.args.save_period
 
@@ -566,6 +564,7 @@ class BaseTrainer:
             (tuple): A tuple containing the training and validation/test datasets.
         """
         try:
+            from flabplatform.flabdet.datasets.yolos.utils  import check_cls_dataset, check_det_dataset
             if self.args.task == "classify":
                 data = check_cls_dataset(self.args.data)
             elif self.args.task in {
@@ -895,7 +894,7 @@ class DetectionTrainer(BaseTrainer):
         dataset_cfg["img_path"] = img_path
         dataset_cfg["batch_size"] = batch
         dataset_cfg["imgsz"] = self.args.imgsz
-        dataset_cfg["augment"] = mode == "train" # 是否进行数据增强 TODO
+        dataset_cfg["augment"] = mode == "train" # 是否进行数据增强 #TODO
         dataset_cfg["hyp"] = self.args
         dataset_cfg["rect"] = mode == "val"
         dataset_cfg["cache"] = self.args.cache
@@ -997,7 +996,7 @@ class DetectionTrainer(BaseTrainer):
         """Return a DetectionValidator for YOLO model validation."""
         self.loss_names = "box_loss", "cls_loss", "dfl_loss"
         validator_cfg = {}
-        validator_cfg["type"] = "DetectionValidator"
+        validator_cfg["type"] = "DetectionValidator_Tmp"
         validator_cfg["save_dir"] = self.save_dir
         validator_cfg["args"] = copy(self.args)
         validator_cfg["_callbacks"] = self.callbacks

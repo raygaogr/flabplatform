@@ -2,22 +2,22 @@
 
 {
   "operation": "training, eval",
-  "task": "detect",
+  "task": "classify",
   "commonParams": {
     "datasets": {
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/classify/train2",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train2/models",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/classify/train2/models",
     "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models"
   },
   "training": {
     "algoParams": {
       "model": {
-        "type": "yolov8n",
-        "num_classes": 80
+        "type": "yolov8n-cls",
+        "num_classes": 1000
       },
       "device": 0, 
       "batch": 2, 
