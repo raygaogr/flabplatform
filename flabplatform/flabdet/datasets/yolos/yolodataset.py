@@ -32,7 +32,7 @@ from flabplatform.flabdet.datasets.yolos.utils import (
 )
 
 DATASET_CACHE_VERSION = "1.0.3"
-
+from .folder import ImageFolder
 from flabplatform.flabdet.registry import DATASETS
 
 class BaseDataset(Dataset):
@@ -1107,7 +1107,6 @@ class SemanticDataset(BaseDataset):
         """Initialize a SemanticDataset object."""
         super().__init__()
 
-
 class ClassificationDataset:
     """
     Extends torchvision ImageFolder to support YOLO classification tasks.
@@ -1142,15 +1141,14 @@ class ClassificationDataset:
             augment (bool, optional): Whether to apply augmentations to the dataset.
             prefix (str, optional): Prefix for logging and cache filenames, aiding in dataset identification.
         """
-        import torchvision  # scope for faster 'import ultralytics'
         from ultralytics.utils.torch_utils import TORCHVISION_0_18
         from ultralytics.data.augment import classify_augmentations, classify_transforms
 
         # Base class assigned as attribute rather than used as base class to allow for scoping slow torchvision import
         if TORCHVISION_0_18:  # 'allow_empty' argument first introduced in torchvision 0.18
-            self.base = torchvision.datasets.ImageFolder(root=root, allow_empty=True)
+            self.base = ImageFolder(root=root, data=args.data, allow_empty=True)
         else:
-            self.base = torchvision.datasets.ImageFolder(root=root)
+            self.base = ImageFolder(root=root, data=args.data)
         self.samples = self.base.samples
         self.root = self.base.root
 
