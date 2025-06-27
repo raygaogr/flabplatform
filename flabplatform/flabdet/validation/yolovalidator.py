@@ -792,7 +792,7 @@ class DetectionValidator(BaseValidator):
         """
         
         standard_json = {
-                "flags": "Alice",
+                "flags": {},
                 "version": "5.0.1",
                 "imageData": None,
                 "imagePath": Path(im_file).name,
