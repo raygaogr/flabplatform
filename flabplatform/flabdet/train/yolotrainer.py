@@ -996,7 +996,7 @@ class DetectionTrainer(BaseTrainer):
         """Return a DetectionValidator for YOLO model validation."""
         self.loss_names = "box_loss", "cls_loss", "dfl_loss"
         validator_cfg = {}
-        validator_cfg["type"] = "DetectionValidator_Tmp"
+        validator_cfg["type"] = "DetectionValidator"
         validator_cfg["save_dir"] = self.save_dir
         validator_cfg["args"] = copy(self.args)
         validator_cfg["_callbacks"] = self.callbacks

@@ -4,7 +4,7 @@ import json
 import numpy as np
 import torch
 import torch.nn.functional as F
-
+import copy
 from flabplatform.flabdet.validation import DetectionValidator
 from flabplatform.flabdet.utils.yolos import LOGGER, NUM_THREADS
 from flabplatform.flabdet.utils.yolos.checks import check_requirements
@@ -74,14 +74,11 @@ class SegmentationValidator(DetectionValidator):
             check_requirements("pycocotools>=2.0.6")
         # more accurate vs faster
         self.process = ops.process_mask_native if self.args.save_json or self.args.save_txt else ops.process_mask
-        self.stats = dict(tp_m=[], tp=[], conf=[], pred_cls=[], target_cls=[], target_img=[])
-        self.iou_list = torch.zeros((self.nc), dtype=torch.float32,device=self.device)
-        self.pred_instances = torch.zeros((self.nc), dtype=torch.int32,device=self.device)
-        self.gt_instances = torch.zeros((self.nc), dtype=torch.int32,device=self.device)
+        self.stats = dict(tp_m=[], tp=[], conf=[], pred_cls=[], target_cls=[], target_img=[], m_iou=[])
 
     def get_desc(self):
         """Return a formatted description of evaluation metrics."""
-        return ("%22s" + "%11s" * 10) % (
+        return ("%22s" + "%11s" * 11) % (
             "Class",
             "Images",
             "Instances",
@@ -92,7 +89,8 @@ class SegmentationValidator(DetectionValidator):
             "Mask(P",
             "R",
             "mAP50",
-            "mAP50-95)",
+            "mAP50-95",
+            "mIoU)"
         )
 
     def postprocess(self, preds):
@@ -143,54 +141,6 @@ class SegmentationValidator(DetectionValidator):
         pred_masks = self.process(proto, pred[:, 6:], pred[:, :4], shape=pbatch["imgsz"])
         return predn, pred_masks
 
-    def merge_masks_and_calculate_IoU(
-        self,
-        gt_masks: torch.Tensor,
-        pred_masks: torch.Tensor,
-        gt_cls: torch.Tensor,
-        pred_cls: torch.Tensor,
-        overlap=False,
-        ):
-        """
-        Merge ground truth masks and predicted masks by class and calculate IoU.
-
-        Args:
-            gt_masks (torch.Tensor): Ground truth masks.
-            pred_masks (torch.Tensor): Predicted masks.
-            gt_cls (torch.Tensor): Ground truth class labels.
-            pred_cls (torch.Tensor): Predicted class labels.
-            overlap (bool, optional): Flag indicating whether the gt masks overlap. Defaults to False.
-
-        Returns:
-            torch.Tensor, torch.Tensor, torch.Tensor: Unique ground truth class labels, unique predicted class labels,
-            and IoU scores.
-        """
-        device = gt_masks.device
-        if overlap == True:
-            nl = len(gt_cls)
-            index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
-            gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
-            gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
-        if gt_masks.shape[1:] != pred_masks.shape[1:]:
-            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
-            gt_masks = gt_masks.gt_(0.5)
-
-        unique_gt_cls = gt_cls.unique().reshape(-1)
-        binary_gt_masks = torch.zeros(unique_gt_cls.shape[0], *gt_masks.shape[1:],device=device)
-        for i, cls in enumerate(unique_gt_cls):
-            binary_gt_masks[i] = gt_masks[gt_cls == cls].sum(dim=0).clamp(min=0, max=1)
-
-        unique_pred_cls = pred_cls.unique().reshape(-1)
-        binary_pred_masks = torch.zeros(unique_pred_cls.shape[0], *pred_masks.shape[1:],device=device)
-        for i, cls in enumerate(unique_pred_cls):
-            binary_pred_masks[i] = pred_masks[pred_cls == cls].sum(dim=0).clamp(min=0, max=1)
-
-        iou = mask_iou(
-            binary_gt_masks.view(binary_gt_masks.shape[0], -1), binary_pred_masks.view(binary_pred_masks.shape[0], -1)
-        )
-
-        return unique_gt_cls, unique_pred_cls, iou
-
     def update_metrics(self, preds, batch):
         """
         Update metrics with the current batch predictions and targets.
@@ -233,25 +183,9 @@ class SegmentationValidator(DetectionValidator):
             # Evaluate
             if nl:
                 stat["tp"] = self._process_batch(predn, bbox, cls)
-                stat["tp_m"] = self._process_batch(
+                stat["tp_m"],stat['m_iou'] = self._process_batch(
                     predn, bbox, cls, pred_masks, gt_masks, self.args.overlap_mask, masks=True
-                )
-
-                unique_gt_cls, unique_pred_cls, iou_matrix = self.merge_masks_and_calculate_IoU(
-                    gt_masks, pred_masks, cls, predn[:, 5], overlap=self.args.overlap_mask
-                )
-                # add instances to list
-                self.pred_instances += predn[:, 5].long().reshape(-1).bincount(minlength=self.nc)
-                self.gt_instances += unique_gt_cls.long().reshape(-1).bincount(minlength=self.nc)
-               
-                # add IoU to list for all classes
-                for iou_idx, ious in enumerate(iou_matrix):
-                    if ious.sum() > 0:
-                        # just get predicted classes that having in gt classes
-                        if unique_gt_cls.long()[iou_idx] in unique_pred_cls:
-                            pred_idx = torch.where(unique_pred_cls == unique_gt_cls.long()[iou_idx])[0]
-                            self.iou_list[unique_gt_cls.long()[iou_idx]] += ious[pred_idx].sum()
-
+                ) # compute mask IoU for segmentation task 
             if self.args.plots:
                 self.confusion_matrix.process_batch(predn, bbox, cls)
 
@@ -283,6 +217,7 @@ class SegmentationValidator(DetectionValidator):
                     pbatch["ori_shape"],
                     self.save_dir / "labels" / f"{Path(batch['im_file'][si]).stem}.txt",
                 )
+
 
     def finalize_metrics(self, *args, **kwargs):
         """
@@ -337,10 +272,12 @@ class SegmentationValidator(DetectionValidator):
                 gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
                 gt_masks = gt_masks.gt_(0.5)
             iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
+            tp_m = self.match_predictions(detections[:, 5], gt_cls, iou)
+            m_iou = self.compute_mask_iou(detections[:, 5], gt_cls, iou)
         else:  # boxes
             iou = box_iou(gt_bboxes, detections[:, :4])
-
-        return self.match_predictions(detections[:, 5], gt_cls, iou)
+            tp = self.match_predictions(detections[:, 5], gt_cls, iou)
+        return (tp_m,m_iou) if masks else tp # tp for box, iou for mask 
 
     def plot_val_samples(self, batch, ni):
         """
@@ -444,14 +381,13 @@ class SegmentationValidator(DetectionValidator):
     def preds_to_labelme(self, preds, batch):
         """
         Convert predictions to LabelMe format.
-
         Args:
             preds (List[torch.Tensor]): List of predictions from the model.
             batch (dict): Batch data containing images and annotations.
-            img0s (torch.Tensor): Original images before preprocessing.
         Returns:
-            
+            None
         """
+    
         save_path = Path(self.save_dir / "label")
         save_path.mkdir(parents=True, exist_ok=True)
         im_file = batch["im_file"] # a batch of image files with absolute path
@@ -463,6 +399,7 @@ class SegmentationValidator(DetectionValidator):
         for i in range(len(im_file)):
             self.pred_to_labelme_single(preds[i],im_file[i],protos[i],
                                         save_conf,ori_shape[i],img_shape,save_path)
+        
 
     def pred_to_labelme_single(self, pred,
                                img_path, 
@@ -479,8 +416,8 @@ class SegmentationValidator(DetectionValidator):
             ori_image (torch.Tensor): Original image tensor.
             img_path (str): Path to the image file.
             proto (torch.Tensor): Prototype masks for segmentation.
-            save_conf (bool): Whether to save confidence scores.
-            img_shape (tuple): Shape of the image.
+            save_conf (bool): threshold to save confidence scores.
+            img_shape (tuple): Shape of the image after preprocess.
         """
         standard_json = {
                 "flags": "Alice",
@@ -492,12 +429,11 @@ class SegmentationValidator(DetectionValidator):
             }
         shapes = []
         if pred.shape[0]:
-            masks = ops.process_mask(proto, pred[:, 6:], pred[:, :4], ori_shape, upsample=True)  # HWC
-            pred[:, :4] = ops.scale_boxes(img_shape, pred[:, :4], ori_shape)
             indices = torch.where(pred[:, 4] > save_conf)[0]
-            masks = masks[indices]
             pred = pred[indices]
-            if masks is not None:
+            if pred.shape[0]:
+                masks = ops.process_mask(proto, pred[:, 6:], pred[:, :4], img_shape, upsample=True)  # HWC
+                # pred[:, :4] = ops.scale_boxes(img_shape, pred[:, :4], ori_shape[::-1])
                 keep = masks.sum((-2, -1)) > 0  # only keep predictions with masks
                 masks = masks[keep]
                 from ultralytics.engine.results import Masks
@@ -509,10 +445,10 @@ class SegmentationValidator(DetectionValidator):
                     temp_unit['points'] = pixel_coords[i].tolist()
                     temp_unit["label"] = self.data['names'][cls_idx]
                     shapes.append(temp_unit)
-                standard_json["shapes"] = shapes
-
+        standard_json["shapes"] = shapes
         with open(save_path / f"{Path(img_path).stem}.json", 'w', encoding='utf-8') as f:
             json.dump(standard_json, f, indent=4)
+
 
     def eval_json(self, stats):
         """Return COCO-style object detection evaluation metrics."""
@@ -570,16 +506,36 @@ class SegmentationValidator(DetectionValidator):
                 LOGGER.warning(f"{pkg} unable to run: {e}")
         return stats
 
+    def compute_mask_iou(self, pred_classes: torch.Tensor, true_classes: torch.Tensor, iou: torch.Tensor
+        ) -> torch.Tensor:
+        """
+        compute the maximum IoU for each predicted class against the true classes.
+
+        Args:
+            pred_classes (torch.Tensor): Predicted class indices of shape (N,).
+            true_classes (torch.Tensor): Target class indices of shape (M,).
+            iou (torch.Tensor): An NxM tensor containing the pairwise IoU values for predictions and ground truth.
+            use_scipy (bool): Whether to use scipy for matching (more precise).
+
+        Returns:
+            (torch.Tensor): Correct tensor of shape (N, 10) for 10 IoU thresholds.
+        """
+
+        class_mask = true_classes.unsqueeze(1) == pred_classes.unsqueeze(0) 
+        masked_iou = iou.clone()
+        masked_iou[~class_mask] = -torch.inf
+        max_ious, _ = torch.max(masked_iou, dim=1)
+        max_ious = torch.nan_to_num(max_ious, nan=0.0, neginf=0.0)
+        return max_ious
+    
+
     def save_val_json(self, stats, model):
         """
         Save validation metrics to a JSON file.
         Args:
             stats (dict): Dictionary containing validation statistics.
+            model: current model 
         """
-        self.mIoU = self.iou_list.sum() / self.gt_instances.sum()
-        self.mIoU_list = torch.where(self.gt_instances != 0,
-                                        self.iou_list / self.gt_instances,
-                                        torch.tensor(0.0, device=self.device))
         # get GPU name if available
         gpu_name = "cpu"
         if torch.cuda.is_available():
@@ -587,7 +543,7 @@ class SegmentationValidator(DetectionValidator):
 
         # only compute FLOPs if not already done
         if not hasattr(self, 'flops') or self.flops is None:
-            self.flops = get_flops(model.float(), imgsz=640) 
+            self.flops = get_flops(copy.deepcopy(model).float().to(self.device), imgsz=640) 
 
         fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
 
@@ -598,288 +554,21 @@ class SegmentationValidator(DetectionValidator):
                 "fps": round(fps),
                 "flops": f"{self.flops:.2f} GFLOPs",
             },
-            f"{self.args.task}":{
-                # "ap": f"{stats.get('metrics/mAP50(M)', 0.0):.4f}",
-                # "mIoU": f"{self.mIoU.item():.4f}",
-            },
+            f"{self.args.task}":{},
         }
 
-        # update val_metrics during training with best fitness (best model)
+         # update val_metrics during training with best fitness (best model)
         if self.training:
             cur_fitness = stats.get("fitness", 0.0)
             if cur_fitness > self.fitness:
                 self.fitness = cur_fitness
                 val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
-                val_metrics[self.args.task]['mIoU'] = round(self.mIoU.item(), 2)
+                val_metrics[self.args.task]['mIoU'] = round(stats.get('metrics/mIoU(M)', 0.0), 2)
         else:
             val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
-            val_metrics[self.args.task]['mIoU'] = round(self.mIoU.item(), 2)
+            val_metrics[self.args.task]['mIoU'] = round(stats.get('metrics/mIoU(M)', 0.0), 2)
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
             json.dump(val_metrics, f, indent=4)
-            LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")
+            # LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")
 
-
-# @VALIDATORS.register_module()
-# class SegmentationValidator_Tmp(SegmentationValidator):
-#     """
-#     A temporary class for testing purposes, extending SegmentationValidator.
-#     This class is used to validate segmentation models with a different set of parameters or configurations.
-#     """
-    
-#     def __init__(self, dataloader=None, save_dir=None, pbar=None, args=None, _callbacks=None):
-#         super().__init__(dataloader, save_dir, pbar, args, _callbacks)
-        
-
-#         self.fitness = -1.0  # fitness metric for both updating best val metrics and model selection
-
-#     def merge_masks_and_calculate_IoU(
-#         self,
-#         gt_masks: torch.Tensor,
-#         pred_masks: torch.Tensor,
-#         gt_cls: torch.Tensor,
-#         pred_cls: torch.Tensor,
-#         overlap=False,
-#         ):
-#         """
-#         Merge ground truth masks and predicted masks by class and calculate IoU.
-
-#         Args:
-#             gt_masks (torch.Tensor): Ground truth masks.
-#             pred_masks (torch.Tensor): Predicted masks.
-#             gt_cls (torch.Tensor): Ground truth class labels.
-#             pred_cls (torch.Tensor): Predicted class labels.
-#             overlap (bool, optional): Flag indicating whether the gt masks overlap. Defaults to False.
-
-#         Returns:
-#             torch.Tensor, torch.Tensor, torch.Tensor: Unique ground truth class labels, unique predicted class labels,
-#             and IoU scores.
-#         """
-#         device = gt_masks.device
-#         if overlap == True:
-#             nl = len(gt_cls)
-#             index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
-#             gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
-#             gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
-#         if gt_masks.shape[1:] != pred_masks.shape[1:]:
-#             gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
-#             gt_masks = gt_masks.gt_(0.5)
-
-#         unique_gt_cls = gt_cls.unique().reshape(-1)
-#         binary_gt_masks = torch.zeros(unique_gt_cls.shape[0], *gt_masks.shape[1:],device=device)
-#         for i, cls in enumerate(unique_gt_cls):
-#             binary_gt_masks[i] = gt_masks[gt_cls == cls].sum(dim=0).clamp(min=0, max=1)
-
-#         unique_pred_cls = pred_cls.unique().reshape(-1)
-#         binary_pred_masks = torch.zeros(unique_pred_cls.shape[0], *pred_masks.shape[1:],device=device)
-#         for i, cls in enumerate(unique_pred_cls):
-#             binary_pred_masks[i] = pred_masks[pred_cls == cls].sum(dim=0).clamp(min=0, max=1)
-
-#         iou = mask_iou(
-#             binary_gt_masks.view(binary_gt_masks.shape[0], -1), binary_pred_masks.view(binary_pred_masks.shape[0], -1)
-#         )
-
-#         return unique_gt_cls, unique_pred_cls, iou
-
-
-    # def update_metrics(self, preds, batch):
-    #     """Metrics."""
-    #     for si, (pred, proto) in enumerate(zip(preds[0], preds[1])):
-    #         self.seen += 1
-    #         npr = len(pred)
-    #         stat = dict(
-    #             conf=torch.zeros(0, device=self.device),
-    #             pred_cls=torch.zeros(0, device=self.device),
-    #             tp=torch.zeros(npr, self.niou, dtype=torch.bool, device=self.device),
-    #             tp_m=torch.zeros(npr, self.niou, dtype=torch.bool, device=self.device),
-    #         )
-    #         pbatch = self._prepare_batch(si, batch)
-    #         cls, bbox = pbatch.pop("cls"), pbatch.pop("bbox")
-    #         nl = len(cls)
-    #         stat["target_cls"] = cls
-    #         stat["target_img"] = cls.unique()
-    #         if npr == 0:
-    #             if nl:
-    #                 for k in self.stats.keys():
-    #                     self.stats[k].append(stat[k])
-    #                 if self.args.plots:
-    #                     self.confusion_matrix.process_batch(detections=None, gt_bboxes=bbox, gt_cls=cls)
-    #             continue
-
-    #         # Masks
-    #         gt_masks = pbatch.pop("masks")
-    #         # Predictions
-    #         if self.args.single_cls:
-    #             pred[:, 5] = 0
-    #         predn, pred_masks = self._prepare_pred(pred, pbatch, proto)
-    #         stat["conf"] = predn[:, 4]
-    #         stat["pred_cls"] = predn[:, 5]
-
-    #         # Evaluate
-    #         if nl:
-    #             stat["tp"] = self._process_batch(predn, bbox, cls)
-    #             stat["tp_m"] = self._process_batch(
-    #                 predn, bbox, cls, pred_masks, gt_masks, self.args.overlap_mask, masks=True
-    #             )
-
-    #             unique_gt_cls, unique_pred_cls, iou_matrix = self.merge_masks_and_calculate_IoU(
-    #                 gt_masks, pred_masks, cls, predn[:, 5], overlap=self.args.overlap_mask
-    #             )
-    #             # add instances to list
-    #             self.pred_instances += predn[:, 5].long().reshape(-1).bincount(minlength=self.nc)
-    #             self.gt_instances += unique_gt_cls.long().reshape(-1).bincount(minlength=self.nc)
-               
-    #             # add IoU to list for all classes
-    #             for iou_idx, ious in enumerate(iou_matrix):
-    #                 if ious.sum() > 0:
-    #                     # just get predicted classes that having in gt classes
-    #                     if unique_gt_cls.long()[iou_idx] in unique_pred_cls:
-    #                         pred_idx = torch.where(unique_pred_cls == unique_gt_cls.long()[iou_idx])[0]
-    #                         self.iou_list[unique_gt_cls.long()[iou_idx]] += ious[pred_idx].sum()
-
-    #         if self.args.plots:
-    #             self.confusion_matrix.process_batch(predn, bbox, cls)
-
-    #         for k in self.stats.keys():
-    #             self.stats[k].append(stat[k])
-
-    #         pred_masks = torch.as_tensor(pred_masks, dtype=torch.uint8)
-    #         if self.args.plots and self.batch_i < 3:
-    #             self.plot_masks.append(pred_masks[:15].cpu())  # filter top 15 to plot
-
-    #         # Save
-    #         if self.args.save_json:
-    #             pred_masks = ops.scale_image(
-    #                 pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(),
-    #                 pbatch["ori_shape"],
-    #                 ratio_pad=batch["ratio_pad"][si],
-    #             )
-    #             self.pred_to_json(predn, batch["im_file"][si], pred_masks)
-        
-    # def finalize_metrics(self, *args, **kwargs):
-    #     """Sets speed and confusion matrix for evaluation metrics."""
-    #     self.metrics.speed = self.speed
-    #     self.metrics.confusion_matrix = self.confusion_matrix
-
-    # def save_val_json(self, stats, model):
-    #     """
-    #     Save validation metrics to a JSON file.
-    #     Args:
-    #         stats (dict): Dictionary containing validation statistics.
-    #     """
-    #     self.mIoU = self.iou_list.sum() / self.gt_instances.sum()
-    #     self.mIoU_list = torch.where(self.gt_instances != 0,
-    #                                     self.iou_list / self.gt_instances,
-    #                                     torch.tensor(0.0, device=self.device))
-    #     # get GPU name if available
-    #     gpu_name = "cpu"
-    #     if torch.cuda.is_available():
-    #         gpu_name = torch.cuda.get_device_name(0)
-
-    #     # only compute FLOPs if not already done
-    #     if not hasattr(self, 'flops') or self.flops is None:
-    #         self.flops = get_flops(model.float(), imgsz=640) 
-
-    #     fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
-
-    #     val_metrics = {
-    #         "operation":self.args.task,
-    #         "performance": {
-    #             "device": gpu_name,
-    #             "fps": round(fps),
-    #             "flops": f"{self.flops:.2f} GFLOPs",
-    #         },
-    #         f"{self.args.task}":{
-    #             # "ap": f"{stats.get('metrics/mAP50(M)', 0.0):.4f}",
-    #             # "mIoU": f"{self.mIoU.item():.4f}",
-    #         },
-    #     }
-
-    #     # update val_metrics during training with best fitness (best model)
-    #     if self.training:
-    #         cur_fitness = stats.get("fitness", 0.0)
-    #         if cur_fitness > self.fitness:
-    #             self.fitness = cur_fitness
-    #             val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
-    #             val_metrics[self.args.task]['mIoU'] = round(self.mIoU.item(), 2)
-    #     else:
-    #         val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
-    #         val_metrics[self.args.task]['mIoU'] = round(self.mIoU.item(), 2)
-
-    #     with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
-    #         json.dump(val_metrics, f, indent=4)
-    #         LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")
-
-    # def preds_to_labelme(self, preds, batch, img0s):
-    #     """
-    #     Convert predictions to LabelMe format.
-
-    #     Args:
-    #         preds (List[torch.Tensor]): List of predictions from the model.
-    #         batch (dict): Batch data containing images and annotations.
-    #         img0s (torch.Tensor): Original images before preprocessing.
-    #     Returns:
-            
-    #     """
-    #     save_path = Path(self.save_dir / "label")
-    #     save_path.mkdir(parents=True, exist_ok=True)
-    #     im_file = batch["im_file"] # a batch of image files with absolute path
-    #     ori_shape = batch["ori_shape"] # original shape of the images
-    #     save_conf = self.args.conf + 0.25 # whether to save confidence scores
-    #     img_shape = batch["img"].shape[2:] # shape of the images
-    #     imgs = batch["img"]
-    #     preds, protos = preds[0],preds[1]
-
-    #     for i in range(len(im_file)):
-    #         self.pred_to_labelme_single(preds[i],im_file[i],protos[i],
-    #                                     save_conf,ori_shape[i],img_shape,save_path)
-
-    # def pred_to_labelme_single(self, pred,
-    #                            img_path, 
-    #                            proto, 
-    #                            save_conf,
-    #                            ori_shape,
-    #                            img_shape,
-    #                            save_path):
-    #     """
-    #     Convert a single prediction to LabelMe format and save it.
-
-    #     Args:
-    #         pred (torch.Tensor): Single prediction tensor.
-    #         ori_image (torch.Tensor): Original image tensor.
-    #         img_path (str): Path to the image file.
-    #         proto (torch.Tensor): Prototype masks for segmentation.
-    #         save_conf (bool): Whether to save confidence scores.
-    #         img_shape (tuple): Shape of the image.
-    #     """
-    #     standard_json = {
-    #             "flags": "Alice",
-    #             "version": "5.0.1",
-    #             "imageData": None,
-    #             "imagePath": Path(img_path).name,
-    #             "imageHeight": ori_shape[0],
-    #             "imageWidth": ori_shape[1],
-    #         }
-    #     shapes = []
-    #     if pred.shape[0]:
-    #         masks = ops.process_mask(proto, pred[:, 6:], pred[:, :4], ori_shape, upsample=True)  # HWC
-    #         pred[:, :4] = ops.scale_boxes(img_shape, pred[:, :4], ori_shape)
-    #         indices = torch.where(pred[:, 4] > save_conf)[0]
-    #         masks = masks[indices]
-    #         pred = pred[indices]
-    #         if masks is not None:
-    #             keep = masks.sum((-2, -1)) > 0  # only keep predictions with masks
-    #             masks = masks[keep]
-    #             from ultralytics.engine.results import Masks
-    #             xy = Masks(masks, ori_shape)
-    #             pixel_coords =xy.xy
-    #             for i in range(masks.shape[0]):
-    #                 cls_idx = int(pred[i][5].item())
-    #                 temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'polygon'}
-    #                 temp_unit['points'] = pixel_coords[i].tolist()
-    #                 temp_unit["label"] = self.data['names'][cls_idx]
-    #                 shapes.append(temp_unit)
-    #             standard_json["shapes"] = shapes
-
-    #     with open(save_path / f"{Path(img_path).stem}.json", 'w', encoding='utf-8') as f:
-    #         json.dump(standard_json, f, indent=4)
