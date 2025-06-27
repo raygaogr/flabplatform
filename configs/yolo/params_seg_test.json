@@ -1,0 +1,29 @@
+
+
+{
+  "operation": "test",
+  "task": "segment",
+  "commonParams": {
+    "datasets": {
+      "rootDir": "/workspace/code/fddlcv_add_seg/fddl/datasets",
+      "metafile": "/workspace/code/fddlcv_add_seg/fddl/datasets/metadata.json"
+    },
+    "outputDir": "/workspace/code/fddlcv_add_seg/fddl/runs/segment/train1",
+    "mqTopic": "",
+    "modelDir": "/workspace/code/fddlcv_add_seg/fddl/runs/segment/train1/models",
+    "pretrainDir": "/workspace/code/fddlcv_add_seg/fddl/models"
+  },
+
+  "test": {
+    "algoParams": {
+      "model": {
+        "type": "yolov8n",
+        "num_classes": 80
+      },
+      "device": 0,
+      "conf": 0.001,
+      "iou": 0.5, 
+      "max_det": 300 
+    }
+  }
+}

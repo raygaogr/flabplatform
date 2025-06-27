@@ -4,7 +4,7 @@ import json
 import time
 import numpy as np
 import torch
-
+import copy
 from ultralytics.data import build_dataloader, build_yolo_dataset, converter
 from flabplatform.flabdet.datasets.yolos.utils  import check_cls_dataset, check_det_dataset
 from ultralytics.nn.autobackend import AutoBackend
@@ -769,7 +769,7 @@ class DetectionValidator(BaseValidator):
         save_path.mkdir(parents=True, exist_ok=True)
         im_file = batch["im_file"] # a batch of image files with absolute path
         ori_shape = batch["ori_shape"] # original shape of the images
-        save_conf = self.args.conf + 0.25 # whether to save confidence scores
+        save_conf = self.args.conf# whether to save confidence scores
         img_shape = batch["img"].shape[2:] # shape of the images
         for b in range(batch_size):
             self.preds_to_labelme_single(im_file[b], ori_shape[b],img_shape,
@@ -803,14 +803,15 @@ class DetectionValidator(BaseValidator):
         if pred.shape[0]:
             indices = torch.where(pred[:, 4] > save_conf)[0]
             pred = pred[indices]
-            pred[:,:4] = ops.scale_boxes(img_shape, pred[:,:4], tuple(im_ori_shape))
-            for i in range(pred.shape[0]):
-                box = pred[i][0:4]  # [x1, y1, x2, y2]
-                cls_idx = int(pred[i][5].item())
-                temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
-                temp_unit['points'] = box.reshape((2, 2)).tolist()
-                temp_unit["label"] = self.data['names'][cls_idx]
-                shapes.append(temp_unit)
+            if pred.shape[0]:
+                pred[:,:4] = ops.scale_boxes(img_shape, pred[:,:4], tuple(im_ori_shape))
+                for i in range(pred.shape[0]):
+                    box = pred[i][0:4]  # [x1, y1, x2, y2]
+                    cls_idx = int(pred[i][5].item())
+                    temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
+                    temp_unit['points'] = box.reshape((2, 2)).tolist()
+                    temp_unit["label"] = self.data['names'][cls_idx]
+                    shapes.append(temp_unit)
         standard_json["shapes"] = shapes
         with open(save_path / f"{Path(im_file).stem}.json", 'w', encoding='utf-8') as f:
             json.dump(standard_json, f, indent=4)
@@ -880,10 +881,10 @@ class DetectionValidator(BaseValidator):
         gpu_name = "cpu"
         if torch.cuda.is_available():
             gpu_name = torch.cuda.get_device_name(0)
-
+            
         # only compute FLOPs if not already done
         if not hasattr(self, 'flops') or self.flops is None:
-            self.flops = get_flops(model.float(), imgsz=640) # calculate FLOPs if not already done
+            self.flops = get_flops(copy.deepcopy(model).float().to(self.device), imgsz=640) # calculate FLOPs if not already done
 
         fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
         val_metrics = {
@@ -912,4 +913,4 @@ class DetectionValidator(BaseValidator):
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
             json.dump(val_metrics, f, indent=4)
-            LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")
+            # LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")

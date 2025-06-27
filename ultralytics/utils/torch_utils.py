@@ -402,9 +402,13 @@ def get_flops(model, imgsz=640):
     Returns:
         (float): The model FLOPs in billions.
     """
+    try:
+        import thop
+    except ImportError:
+        print("import thop error, try pip install thop else flops=0")
+        thop = None
     if not thop:
         return 0.0  # if not installed return 0.0 GFLOPs
-
     try:
         model = de_parallel(model)
         p = next(model.parameters())

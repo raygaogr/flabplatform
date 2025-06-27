@@ -660,6 +660,22 @@ def ap_per_class(
     fp = (tp / (p + eps) - tp).round()  # false positives
     return tp, fp, p, r, f1, ap, unique_classes.astype(int), p_curve, r_curve, f1_curve, x, prec_values
 
+def mask_iou_per_class(target_cls,m_iou):
+    """
+    compute class wise mask iou 
+    args: 
+        target_cls: numpy.array, gt classes ids
+        m_iou: numpy.array, target gt corresponding mask IoU 
+    returns:
+        ious: numpy.array, class wise IoU 
+    """
+    unique_classes, nt = np.unique(target_cls, return_counts=True)
+    nc = unique_classes.shape[0]  # number of classes
+    ious = np.zeros(nc)
+    for ci,c in enumerate(unique_classes):
+        idx = target_cls == c
+        ious[ci] = m_iou[idx].mean()
+    return ious
 
 class Metric(SimpleClass):
     """
@@ -696,6 +712,7 @@ class Metric(SimpleClass):
         self.all_ap = []  # (nc, 10)
         self.ap_class_index = []  # (nc, )
         self.nc = 0
+        self.all_iou = None # only for segment task
 
     @property
     def ap50(self):
@@ -774,6 +791,14 @@ class Metric(SimpleClass):
     def class_result(self, i):
         """Return class-aware result, p[i], r[i], ap50[i], ap[i]."""
         return self.p[i], self.r[i], self.ap50[i], self.ap[i]
+
+    def mean_iou(self):
+        """Return mean of results, mIoU, segmentation task only."""
+        return [self.all_iou.mean()] if self.all_iou is not None else [0.0]
+
+    def class_iou(self,i):
+        """Return class-aware result, mask IoU, segmentation task only."""
+        return (self.all_iou[i],) if self.all_iou is not None else (0.0,)
 
     @property
     def maps(self):
@@ -962,7 +987,7 @@ class SegmentMetrics(SimpleClass):
         self.speed = {"preprocess": 0.0, "inference": 0.0, "loss": 0.0, "postprocess": 0.0}
         self.task = "segment"
 
-    def process(self, tp, tp_m, conf, pred_cls, target_cls, on_plot=None):
+    def process(self, tp, tp_m, conf, pred_cls, target_cls, m_iou, on_plot=None):
         """
         Process the detection and segmentation metrics over the given set of predictions.
 
@@ -987,6 +1012,8 @@ class SegmentMetrics(SimpleClass):
         )[2:]
         self.seg.nc = len(self.names)
         self.seg.update(results_mask)
+        # compute class-wise IoU
+        self.seg.all_iou = mask_iou_per_class(target_cls,m_iou)
         results_box = ap_per_class(
             tp,
             conf,
@@ -1013,15 +1040,16 @@ class SegmentMetrics(SimpleClass):
             "metrics/recall(M)",
             "metrics/mAP50(M)",
             "metrics/mAP50-95(M)",
+            "metrics/mIoU(M)"
         ]
 
     def mean_results(self):
         """Return the mean metrics for bounding box and segmentation results."""
-        return self.box.mean_results() + self.seg.mean_results()
+        return self.box.mean_results() + self.seg.mean_results() + self.seg.mean_iou()
 
     def class_result(self, i):
         """Return classification results for a specified class index."""
-        return self.box.class_result(i) + self.seg.class_result(i)
+        return self.box.class_result(i) + self.seg.class_result(i)+ self.seg.class_iou(i)
 
     @property
     def maps(self):

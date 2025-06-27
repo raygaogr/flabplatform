@@ -1,0 +1,46 @@
+
+
+{
+  "operation": "training",
+  "task": "detect",
+  "commonParams": {
+    "datasets": {
+      "rootDir": "/workspace/code/fddlcv_add_seg/fddl/datasets",
+      "metafile": "/workspace/code/fddlcv_add_seg/fddl/datasets/metadata_copy.json"
+    },
+    "outputDir": "/workspace/code/fddlcv_add_seg/fddl/runs/detect/train1",
+    "mqTopic": "",
+    "modelDir": "/workspace/code/fddlcv_add_seg/fddl/runs/detect/train1/models",
+    "pretrainDir": "/workspace/code/fddlcv_add_seg/fddl/models"
+  },
+  "training": {
+    "algoParams": {
+      "model": {
+        "type": "yolov8n",
+        "num_classes": 80
+      },
+      "device": 0, 
+      "batch": 2, 
+      "workers": 8, 
+      "imgsz": 640, 
+      "seed": 0,
+      "epochs": 2,
+      "patience": 2,
+      "save_period": 1,
+      "amp": true,
+      "optimizer": {
+        "type": "auto", 
+        "weight_decay": 0.0005,
+        "lr0": 0.01,
+        "momentum": 0.937
+      }
+    }
+  },
+  "eval": {
+    "algoParams": {
+      "conf": 0.001,
+      "iou": 0.5, 
+      "max_det": 300 
+    }
+  }
+}
