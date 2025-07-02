@@ -90,7 +90,7 @@ class AiAnnotation:
             target_img = Image.open(name)
 
             standard_json = {
-                "flags": "Alice",
+                "flags": {},
                 "version": "5.0.1",
                 "imageData": None,
                 "imagePath": osp.basename(name),

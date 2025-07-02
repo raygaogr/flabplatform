@@ -186,6 +186,8 @@ class SegmentationValidator(DetectionValidator):
                 stat["tp_m"],stat['m_iou'] = self._process_batch(
                     predn, bbox, cls, pred_masks, gt_masks, self.args.overlap_mask, masks=True
                 ) # compute mask IoU for segmentation task 
+            else:
+                stat['m_iou'] = torch.empty((0,)).to(self.device)
             if self.args.plots:
                 self.confusion_matrix.process_batch(predn, bbox, cls)
 

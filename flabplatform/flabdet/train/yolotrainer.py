@@ -35,7 +35,7 @@ from ultralytics.utils.torch_utils import (
 from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
-from flabplatform.flabdet.models import DetectionModel, attempt_load_one_weight, attempt_load_weights
+from flabplatform.flabdet.models import  attempt_load_one_weight, attempt_load_weights
 from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG,
     LOCAL_RANK,
@@ -45,14 +45,13 @@ from flabplatform.flabdet.utils.yolos import (
     clean_url,
     colorstr,
     emojis,
-    yaml_save,
-    DATASETS_DIR
 )
 from flabplatform import __version__
 from flabplatform.flabdet.registry import TRAINERS, VALIDATORS, DATASETS, MODELS
-from ultralytics.data import build_dataloader #, build_yolo_dataset
+from ultralytics.data import build_dataloader
+from flabplatform.core.engine.abctrainer import ABCTrainer
 
-class BaseTrainer:
+class BaseTrainer(ABCTrainer):
     """
     A base class for creating trainers.
 
@@ -281,13 +280,13 @@ class BaseTrainer:
 
         # Dataloaders
         batch_size = self.batch_size // max(world_size, 1)
-        self.train_loader = self.get_dataloader(self.trainset, batch_size=batch_size, rank=LOCAL_RANK, mode="train")
+        self.train_loader = self.build_dataloader(self.trainset, batch_size=batch_size, rank=LOCAL_RANK, mode="train")
         if RANK in {-1, 0}:
             # Note: When training DOTA dataset, double batch size could get OOM on images with >2000 objects.
-            self.test_loader = self.get_dataloader(
+            self.test_loader = self.build_dataloader(
                 self.testset, batch_size=batch_size if self.args.task == "obb" else batch_size * 2, rank=-1, mode="val"
             )
-            self.validator = self.get_validator()
+            self.validator = self.build_validator()
             metric_keys = self.validator.metrics.keys + self.label_loss_items(prefix="val")
             self.metrics = dict(zip(metric_keys, [0] * len(metric_keys)))
             self.ema = ModelEMA(self.model)
@@ -635,14 +634,21 @@ class BaseTrainer:
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Get model and raise NotImplementedError for loading cfg files."""
         raise NotImplementedError("This task trainer doesn't support loading cfg files")
+    
+    def build_validator(self):
+        """Returns a NotImplementedError when the build_validator function is called."""
+        raise NotImplementedError("build_validator function not implemented in trainer")
 
-    def get_validator(self):
-        """Returns a NotImplementedError when the get_validator function is called."""
-        raise NotImplementedError("get_validator function not implemented in trainer")
+    # def get_validator(self):
+    #     """Returns a NotImplementedError when the get_validator function is called."""
+    #     raise NotImplementedError("get_validator function not implemented in trainer")
 
-    def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
-        """Returns dataloader derived from torch.data.Dataloader."""
-        raise NotImplementedError("get_dataloader function not implemented in trainer")
+    def build_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
+        raise NotImplementedError("build_dataloader function not implemented in trainer")
+
+    # def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
+    #     """Returns dataloader derived from torch.data.Dataloader."""
+    #     raise NotImplementedError("get_dataloader function not implemented in trainer")
 
     def build_dataset(self, img_path, mode="train", batch=None):
         """Build dataset."""
@@ -857,11 +863,11 @@ class DetectionTrainer(BaseTrainer):
 
     Methods:
         build_dataset: Build YOLO dataset for training or validation.
-        get_dataloader: Construct and return dataloader for the specified mode.
+        build_dataloader: Construct and return dataloader for the specified mode.
         preprocess_batch: Preprocess a batch of images by scaling and converting to float.
         set_model_attributes: Set model attributes based on dataset information.
         get_model: Return a YOLO detection model.
-        get_validator: Return a validator for model evaluation.
+        build_validator: Return a validator for model evaluation.
         label_loss_items: Return a loss dictionary with labeled training loss items.
         progress_string: Return a formatted string of training progress.
         plot_training_samples: Plot training samples with their annotations.
@@ -909,7 +915,7 @@ class DetectionTrainer(BaseTrainer):
         return DATASETS.build(dataset_cfg)
         # return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, rect=mode == "val", stride=gs)
 
-    def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
+    def build_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
         """
         Construct and return dataloader for the specified mode.
 
@@ -992,7 +998,7 @@ class DetectionTrainer(BaseTrainer):
             model.load(weights)
         return model
 
-    def get_validator(self):
+    def build_validator(self):
         """Return a DetectionValidator for YOLO model validation."""
         self.loss_names = "box_loss", "cls_loss", "dfl_loss"
         validator_cfg = {}
