@@ -1226,6 +1226,36 @@ class PoseMetrics(SegmentMetrics):
         """Return dictionary of computed performance metrics and statistics."""
         return self.box.curves_results + self.pose.curves_results
 
+def compute_f1(pred, target, num_classes=None):
+    """
+    Args:
+        pred: 
+        target: 
+        num_classes: 
+    Returns:
+        macro_f1: 
+    """
+    if num_classes is None:
+        num_classes = max(target.max().item(), pred.max().item()) + 1
+    
+    f1_scores = []
+    for class_idx in range(num_classes):
+        # 
+        tp = ((pred == class_idx) & (target == class_idx)).sum().item()
+        fp = ((pred == class_idx) & (target != class_idx)).sum().item()
+        fn = ((pred != class_idx) & (target == class_idx)).sum().item()
+        # 
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        #
+        if (precision + recall) > 0:
+            f1 = 2 * (precision * recall) / (precision + recall)
+        else:
+            f1 = 0.0
+        f1_scores.append(f1)
+    # 
+    macro_f1 = sum(f1_scores) / len(f1_scores)
+    return macro_f1
 
 class ClassifyMetrics(SimpleClass):
     """
@@ -1244,6 +1274,7 @@ class ClassifyMetrics(SimpleClass):
         self.top5 = 0
         self.speed = {"preprocess": 0.0, "inference": 0.0, "loss": 0.0, "postprocess": 0.0}
         self.task = "classify"
+        self.f1_score = 0
 
     def process(self, targets, pred):
         """
@@ -1257,6 +1288,7 @@ class ClassifyMetrics(SimpleClass):
         correct = (targets[:, None] == pred).float()
         acc = torch.stack((correct[:, 0], correct.max(1).values), dim=1)  # (top1, top5) accuracy
         self.top1, self.top5 = acc.mean(0).tolist()
+        self.f1_score = compute_f1(pred[:,0],targets)
 
     @property
     def fitness(self):
@@ -1266,12 +1298,12 @@ class ClassifyMetrics(SimpleClass):
     @property
     def results_dict(self):
         """Return a dictionary with model's performance metrics and fitness score."""
-        return dict(zip(self.keys + ["fitness"], [self.top1, self.top5, self.fitness]))
+        return dict(zip(self.keys + ["fitness"], [self.top1, self.top5, self.f1_score,self.fitness]))
 
     @property
     def keys(self):
         """Return a list of keys for the results_dict property."""
-        return ["metrics/accuracy_top1", "metrics/accuracy_top5"]
+        return ["metrics/accuracy_top1", "metrics/accuracy_top5","metrics/f1_score"]
 
     @property
     def curves(self):

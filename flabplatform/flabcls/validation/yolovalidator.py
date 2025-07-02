@@ -1,8 +1,9 @@
-
+from pathlib import Path
 import torch
-
+import json
+import copy
 from ultralytics.data import build_dataloader
-
+from ultralytics.utils.torch_utils import get_flops
 from ultralytics.utils.metrics import ClassifyMetrics, ConfusionMatrix
 from ultralytics.utils.plotting import plot_images
 from flabplatform.flabdet.datasets.yolos import ClassificationDataset
@@ -75,10 +76,10 @@ class ClassificationValidator(BaseValidator):
         self.pred = None
         self.args.task = "classify"
         self.metrics = ClassifyMetrics()
-
+        self.fitness = -1
     def get_desc(self):
         """Return a formatted string summarizing classification metrics."""
-        return ("%22s" + "%11s" * 2) % ("classes", "top1_acc", "top5_acc")
+        return ("%22s" + "%11s" * 3) % ("classes", "top1_acc", "top5_acc","f1_score")
 
     def init_metrics(self, model):
         """Initialize confusion matrix, class names, and tracking containers for predictions and targets."""
@@ -168,7 +169,7 @@ class ClassificationValidator(BaseValidator):
     def print_results(self):
         """Print evaluation metrics for the classification model."""
         pf = "%22s" + "%11.3g" * len(self.metrics.keys)  # print format
-        LOGGER.info(pf % ("all", self.metrics.top1, self.metrics.top5))
+        LOGGER.info(pf % ("all", self.metrics.top1, self.metrics.top5, self.metrics.f1_score))
 
     def plot_val_samples(self, batch, ni):
         """
@@ -215,3 +216,100 @@ class ClassificationValidator(BaseValidator):
             names=self.names,
             on_plot=self.on_plot,
         )  # pred
+
+    def save_val_json(self, stats, model):
+        """
+            Save validation metrics to a JSON file.
+            Args:
+                stats (dict): Dictionary containing validation statistics.
+        """
+        # get GPU name if available
+        gpu_name = "cpu"
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0)
+            
+        # only compute FLOPs if not already done
+        if not hasattr(self, 'flops') or self.flops is None:
+            self.flops = get_flops(copy.deepcopy(model).float().to(self.device), imgsz=640) # calculate FLOPs if not already done
+
+        fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
+        val_metrics = {
+            "operation":self.args.task,
+            "performance": {
+                "device": gpu_name,
+                "fps": round(fps),
+                "flops": f"{self.flops:.2f} GFLOPs",
+            },
+            f"{self.args.task}":{}
+            }
+        
+        if self.training:
+            cur_fitness = stats.get("fitness", 0.0)
+            if cur_fitness >= self.fitness:
+                self.fitness = cur_fitness
+                val_metrics[self.args.task]['top1'] = round(stats.get('metrics/accuracy_top1',0.0), 2)
+                val_metrics[self.args.task]['f1_score'] = round(stats.get('metrics/f1_score',0.0),2)
+        else:
+            val_metrics[f"{self.args.task}"]["top1"]= round(stats.get('metrics/accuracy_top1', 0.0),2)
+            val_metrics[f"{self.args.task}"]["f1_score"] = round(stats.get('metrics/f1_score', 0.0), 2)
+
+
+        with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
+                json.dump(val_metrics, f, indent=4)
+
+
+    def preds_to_labelme(self, preds, batch):
+        """
+        Convert predictions to LabelMe format.
+
+        Args:
+            preds (List[torch.Tensor]): List of predictions from the model.
+            batch (dict): Batch data containing images and annotations.
+
+        Returns:
+            
+        """
+        batch_size = len(preds)
+        save_path = Path(self.save_dir / "label")
+        save_path.mkdir(parents=True, exist_ok=True)
+        im_file = batch["im_file"] # a batch of image files with absolute path
+        ori_shape = batch["ori_shape"] # original shape of the images
+        for b in range(batch_size):
+            self.preds_to_labelme_single(im_file[b], ori_shape[b],
+                                         preds[b], save_path)
+    
+    def preds_to_labelme_single(self, 
+                              im_file: str, 
+                              im_ori_shape:list,
+                              pred:torch.Tensor,
+                              save_path:Path):
+        """
+        Convert a single prediction to LabelMe format and save it.
+        args:
+            im_file (str): Path to the image file.
+            im_ori_shape [h,w] (list): Original shape of the image.
+            pred [n,6] (torch.Tensor): Predictions for the image.
+            save_path (Path): Path to save the LabelMe JSON file.
+            save_conf (float): Confidence threshold for saving predictions.
+        """
+        
+        standard_json = {
+                "flags": {},
+                "version": "5.5.0",
+                "imageData": None,
+                "imagePath": Path(im_file).name,
+                "imageHeight": im_ori_shape[0],
+                "imageWidth": im_ori_shape[1],
+            }
+        
+        class_idx = torch.argmax(pred).item()
+        shapes =[{
+            "label":self.names[class_idx],
+            "points": [],
+            "group_id": None,
+            "description": None,
+            "shape_type": "classification",
+        }]
+        standard_json["shapes"] = shapes
+        with open(save_path / f"{Path(im_file).stem}.json", 'w', encoding='utf-8') as f:
+            json.dump(standard_json, f, indent=4)

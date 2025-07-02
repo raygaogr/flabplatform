@@ -1202,10 +1202,11 @@ class ClassificationDataset:
             im = np.load(fn)
         else:  # read image
             im = cv2.imread(f)  # BGR
+        ori_h, ori_w = im.shape[:2]
         # Convert NumPy array to PIL image
         im = Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
         sample = self.torch_transforms(im)
-        return {"img": sample, "cls": j}
+        return {"img": sample, "cls": j,"im_file":f,"ori_shape":(ori_h,ori_w)}
 
     def __len__(self) -> int:
         """Return the total number of samples in the dataset."""
@@ -1255,3 +1256,16 @@ class ClassificationDataset:
             x["msgs"] = msgs  # warnings
             save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
             return samples
+    
+    def collate_fn(self,batch):
+        """
+        Args:
+            batch (list):
+        Returns:
+
+        """
+        from torch.utils.data.dataloader import default_collate
+        original_shapes = [item.pop('ori_shape') for item in batch]
+        collated_batch = default_collate(batch)
+        collated_batch['ori_shape'] = original_shapes
+        return collated_batch
