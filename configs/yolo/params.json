@@ -2,38 +2,46 @@
 
 {
   "operation": "training, eval",
-  "task": "classify",
+  "task": "detect",
   "commonParams": {
     "datasets": {
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/classify",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/classify/models",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect/models",
     "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models"
   },
   "training": {
     "algoParams": {
       "model": {
-        "type": "yolov8n-cls",
+        "type": "yolov8n-det",
         "num_classes": 80
       },
-      "device": 0, 
-      "batch": 2, 
-      "workers": 8, 
-      "imgsz": 640, 
-      "seed": 0,
       "epochs": 2,
-      "patience": 2,
-      "save_period": 1,
+      "batch": 2, 
+      "img_size": 640,
+      "optimizer":  "Adam", 
+      "lr": 0.01, 
+      
       "amp": true,
-      "optimizer": {
-        "type": "auto", 
-        "weight_decay": 0.0005,
-        "lr0": 0.01,
-        "momentum": 0.937
-      }
+      "weight_decay": 0.0005,
+      "momentum": 0.937,
+      "scheduler": "cos_lr",
+      "patience": 2,
+      "workers": 8, 
+      "seed": 0,
+      "device": 0,
+        
+      "degrees": 0.0,
+      "translate": 0.1,
+      "scale": 0.5,
+      "shear": 0.0,
+      "flipud": 0.0,
+      "fliplr": 0.5,
+      "mosaic": 1.0,
+      "perspective": 0.0
     }
   },
   "eval": {

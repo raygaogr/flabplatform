@@ -1,7 +1,6 @@
 import contextlib
 import pickle
 import re
-import types
 from copy import deepcopy
 from pathlib import Path
 
@@ -90,8 +89,9 @@ from ultralytics.utils.torch_utils import (
     time_sync,
 )
 
-from flabplatform.flabdet.utils.yolos import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
+from flabplatform.flabdet.utils.yolos import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, yaml_load
 from flabplatform.flabdet.registry import MODELS
+from flabplatform.core.engine import ABCModel
 
 
 try:
@@ -100,7 +100,7 @@ except ImportError:
     thop = None  # conda support without 'ultralytics-thop' installed
 
 
-class BaseModel(torch.nn.Module):
+class BaseModel(ABCModel):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
 
     def forward(self, x, *args, **kwargs):

@@ -35,7 +35,7 @@ from ultralytics.utils.torch_utils import (
 from flabplatform.flabdet.utils.yolos.checks import check_amp, check_file, check_imgsz, check_model_file_from_stem, print_args
 
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
-from flabplatform.flabdet.models import  attempt_load_one_weight, attempt_load_weights
+# from flabplatform.flabdet.models import  attempt_load_one_weight, attempt_load_weights
 from flabplatform.flabdet.utils.yolos import (
     DEFAULT_CFG,
     LOCAL_RANK,
@@ -373,7 +373,7 @@ class BaseTrainer(ABCTrainer):
 
                 # Forward
                 with autocast(self.amp):
-                    batch = self.preprocess_batch(batch)
+                    batch = self.preprocess(batch)
                     loss, self.loss_items = self.model(batch)
                     self.loss = loss.sum()
                     if RANK != -1:
@@ -593,7 +593,7 @@ class BaseTrainer(ABCTrainer):
         """
         if isinstance(self.model, torch.nn.Module):  # if model is loaded beforehand. No setup needed
             return
-
+        from flabplatform.flabdet.models import  attempt_load_one_weight
         cfg, weights = self.model, None
         ckpt = None
         if str(self.model).endswith(".pt"):
@@ -723,6 +723,7 @@ class BaseTrainer(ABCTrainer):
         resume = self.args.resume
         if resume:
             try:
+                from flabplatform.flabdet.models import  attempt_load_weights
                 exists = isinstance(resume, (str, Path)) and Path(resume).exists()
                 last = Path(check_file(resume) if exists else get_latest_run())
 

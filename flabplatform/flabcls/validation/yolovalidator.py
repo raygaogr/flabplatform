@@ -217,7 +217,7 @@ class ClassificationValidator(BaseValidator):
             on_plot=self.on_plot,
         )  # pred
 
-    def save_to_json(self, model):
+    def save_to_json(self, stats, model):
         """
             Save validation metrics to a JSON file.
             Args:
@@ -244,14 +244,14 @@ class ClassificationValidator(BaseValidator):
             }
         
         if self.training:
-            cur_fitness = self.stats.get("fitness", 0.0)
+            cur_fitness = stats.get("fitness", 0.0)
             if cur_fitness >= self.fitness:
                 self.fitness = cur_fitness
-                val_metrics[self.args.task]['top1'] = round(self.stats.get('metrics/accuracy_top1',0.0), 2)
-                val_metrics[self.args.task]['f1_score'] = round(self.stats.get('metrics/f1_score',0.0),2)
+                val_metrics[self.args.task]['top1'] = round(stats.get('metrics/accuracy_top1',0.0), 2)
+                val_metrics[self.args.task]['f1_score'] = round(stats.get('metrics/f1_score',0.0),2)
         else:
-            val_metrics[f"{self.args.task}"]["top1"]= round(self.stats.get('metrics/accuracy_top1', 0.0),2)
-            val_metrics[f"{self.args.task}"]["f1_score"] = round(self.stats.get('metrics/f1_score', 0.0), 2)
+            val_metrics[f"{self.args.task}"]["top1"]= round(stats.get('metrics/accuracy_top1', 0.0),2)
+            val_metrics[f"{self.args.task}"]["f1_score"] = round(stats.get('metrics/f1_score', 0.0), 2)
 
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:

@@ -531,7 +531,7 @@ class SegmentationValidator(DetectionValidator):
         return max_ious
     
 
-    def save_to_json(self, model):
+    def save_to_json(self, stats, model):
         """
         Save validation metrics to a JSON file.
         Args:
@@ -561,14 +561,14 @@ class SegmentationValidator(DetectionValidator):
 
          # update val_metrics during training with best fitness (best model)
         if self.training:
-            cur_fitness = self.stats.get("fitness", 0.0)
+            cur_fitness = stats.get("fitness", 0.0)
             if cur_fitness > self.fitness:
                 self.fitness = cur_fitness
-                val_metrics[self.args.task]['ap'] = round(self.stats.get('metrics/mAP50(M)', 0.0),2)
-                val_metrics[self.args.task]['mIoU'] = round(self.stats.get('metrics/mIoU(M)', 0.0), 2)
+                val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
+                val_metrics[self.args.task]['mIoU'] = round(stats.get('metrics/mIoU(M)', 0.0), 2)
         else:
-            val_metrics[self.args.task]['ap'] = round(self.stats.get('metrics/mAP50(M)', 0.0),2)
-            val_metrics[self.args.task]['mIoU'] = round(self.stats.get('metrics/mIoU(M)', 0.0), 2)
+            val_metrics[self.args.task]['ap'] = round(stats.get('metrics/mAP50(M)', 0.0),2)
+            val_metrics[self.args.task]['mIoU'] = round(stats.get('metrics/mIoU(M)', 0.0), 2)
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
             json.dump(val_metrics, f, indent=4)

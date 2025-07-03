@@ -1182,7 +1182,7 @@ class YOLOWarpper(YOLORunner):
     @classmethod
     def from_cfg(cls, cfg: Config):
         cfg_dict = cfg.to_dict()
-        special_keys = ["model", "optimizer"]
+        type_keys = ["model"]
         ignore_keys = ["mqTopic", "rootDir", "type", "pipelineId", "runId", "nodeId"] #TODO
 
         def parse_dict(input_dict: dict, output_dict: dict) -> dict:
@@ -1192,16 +1192,22 @@ class YOLOWarpper(YOLORunner):
                 elif k == "outputDir":
                     output_dict["save_dir"] = v
                     SETTINGS.update(dict(runs_dir=v))
+                elif k == "img_size":
+                    output_dict["imgsz"] = v
+                elif k == "lr":
+                    output_dict["lr0"] = v
+                elif k == "scheduler":
+                    output_dict["cos_lr"] = True
                 elif k == "operation":
                     if "training" in v:
                         output_dict["mode"] = "train"
-                    elif "eval" in v or "val" in v or "test" in v:
+                    elif "eval" in v or "test" in v:
                         output_dict["mode"] = "val"
                     else:
                         output_dict["mode"] = v
                 elif k == "metafile":
                     output_dict["data"] = v
-                elif k in special_keys:
+                elif k in type_keys:
                     output_dict[k] = v["type"]
                     parse_dict(v, output_dict)
                 else:

@@ -218,7 +218,7 @@ class BaseValidator(ABCValidator):
         self.check_stats(stats)
         self.speed = dict(zip(self.speed.keys(), (x.t / len(self.dataloader.dataset) * 1e3 for x in dt)))
         self.finalize_metrics()
-        self.save_to_json(model)
+        self.save_to_json(stats, model)
         self.print_results()
         self.run_callbacks("on_val_end")
         if self.training:
@@ -873,7 +873,7 @@ class DetectionValidator(BaseValidator):
                 LOGGER.warning(f"{pkg} unable to run: {e}")
         return stats
 
-    def save_to_json(self, model):
+    def save_to_json(self, stats, model):
         """
         Save validation metrics to a JSON file.
         Args:
@@ -901,16 +901,16 @@ class DetectionValidator(BaseValidator):
     
         # update val_metrics during training with best fitness (best model)
         if self.training:
-            cur_fitness = self.stats.get("fitness", 0.0)
+            cur_fitness = stats.get("fitness", 0.0)
             if cur_fitness >= self.fitness:
                 self.fitness = cur_fitness
-                val_metrics[self.args.task]['mAP'] = round(self.stats.get('metrics/mAP50(B)',0.0), 2)
-                val_metrics[self.args.task]['precision'] = round(self.stats.get('metrics/precision(B)',0.0),2)
-                val_metrics[self.args.task]['recall'] = round(self.stats.get('metrics/recall(B)',0.0),2)
+                val_metrics[self.args.task]['mAP'] = round(stats.get('metrics/mAP50(B)',0.0), 2)
+                val_metrics[self.args.task]['precision'] = round(stats.get('metrics/precision(B)',0.0),2)
+                val_metrics[self.args.task]['recall'] = round(stats.get('metrics/recall(B)',0.0),2)
         else:
-            val_metrics[f"{self.args.task}"]["mAP"]= round(self.stats.get('metrics/mAP50-95(B)', 0.0),2)
-            val_metrics[f"{self.args.task}"]["precision"] = round(self.stats.get('metrics/precision(B)', 0.0), 2)
-            val_metrics[f"{self.args.task}"]["recall"] = round(self.stats.get('metrics/recall(B)', 0.0), 2)
+            val_metrics[f"{self.args.task}"]["mAP"]= round(stats.get('metrics/mAP50-95(B)', 0.0),2)
+            val_metrics[f"{self.args.task}"]["precision"] = round(stats.get('metrics/precision(B)', 0.0), 2)
+            val_metrics[f"{self.args.task}"]["recall"] = round(stats.get('metrics/recall(B)', 0.0), 2)
 
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
