@@ -15,10 +15,10 @@ from flabplatform.flabdet.utils.yolos import (
 from flabplatform.core.config import Config
 from flabplatform.flabdet.models import attempt_load_one_weight, guess_model_task, yaml_model_load
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
-from .baserunner import BaseRunner
+from .abcrunner import ABCRunner
 import os
 
-class YOLORunner(BaseRunner):
+class YOLORunner(ABCRunner):
     """
     A base class for implementing YOLO models, unifying APIs across different model types.
 
@@ -1144,7 +1144,7 @@ class YOLORunner(BaseRunner):
         return self._modules["model"] if name == "model" else getattr(self.model, name)
 
 
-class YOLORunnerWarpper(YOLORunner):
+class YOLOWarpper(YOLORunner):
     """YOLO (You Only Look Once) object detection model."""
 
     def __init__(self, cfg: dict, verbose=True):

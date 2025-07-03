@@ -718,10 +718,10 @@ def check_amp(model):
     LOGGER.info(f"{prefix}running Automatic Mixed Precision (AMP) checks...")
     warning_msg = "Setting 'amp=True'. If you experience zero-mAP or NaN losses you can disable AMP with amp=False."
     try:
-        from flabplatform.core.engine import YOLORunnerWarpper
+        from flabplatform.core.engine import YOLOWarpper
         overrides = {"model": "yolo11n.pt", "amp": True, "device": device, "pretrainDir": "", "num_classes": 80 }  # overrides for YOLORunnerWarpper
 
-        assert amp_allclose(YOLORunnerWarpper(overrides), im)
+        assert amp_allclose(YOLOWarpper(overrides), im)
         LOGGER.info(f"{prefix}checks passed ✅")
     except ConnectionError:
         LOGGER.warning(

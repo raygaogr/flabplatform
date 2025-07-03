@@ -202,7 +202,7 @@ class BaseTrainer(ABCTrainer):
         else:
             self._do_train(world_size)
 
-    def _setup_scheduler(self):
+    def build_scheduler(self):
         """Initialize training learning rate scheduler."""
         if self.args.cos_lr:
             self.lf = one_cycle(1, self.args.lrf, self.epochs)  # cosine 1->hyp['lrf']
@@ -306,7 +306,7 @@ class BaseTrainer(ABCTrainer):
             iterations=iterations,
         )
         # Scheduler
-        self._setup_scheduler()
+        self.build_scheduler()
         self.stopper, self.stop = EarlyStopping(patience=self.args.patience), False
         self.resume_training(ckpt)
         self.scheduler.last_epoch = self.start_epoch - 1  # do not move
@@ -445,7 +445,7 @@ class BaseTrainer(ABCTrainer):
             if self.args.time:
                 mean_epoch_time = (t - self.train_time_start) / (epoch - self.start_epoch + 1)
                 self.epochs = self.args.epochs = math.ceil(self.args.time * 3600 / mean_epoch_time)
-                self._setup_scheduler()
+                self.build_scheduler()
                 self.scheduler.last_epoch = self.epoch  # do not move
                 self.stop |= epoch >= self.epochs  # stop if exceeded epochs
             self.run_callbacks("on_fit_epoch_end")

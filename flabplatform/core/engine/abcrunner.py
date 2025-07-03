@@ -7,7 +7,7 @@ from PIL import Image
 from abc import ABCMeta, abstractmethod
 from flabplatform.core.config import Config
 
-class BaseRunner(nn.Module, metaclass=ABCMeta):
+class ABCRunner(nn.Module, metaclass=ABCMeta):
     """Base class for all runners.
     """
     def __init__(self):

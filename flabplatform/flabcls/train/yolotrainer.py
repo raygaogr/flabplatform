@@ -131,7 +131,7 @@ class ClassificationTrainer(BaseTrainer):
         """
         return ClassificationDataset(root=img_path, args=self.args, augment=mode == "train", prefix=mode)
 
-    def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
+    def build_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
         """
         Return PyTorch DataLoader with transforms to preprocess images.
 
@@ -174,7 +174,7 @@ class ClassificationTrainer(BaseTrainer):
             "Size",
         )
 
-    def get_validator(self):
+    def build_validator(self):
         """Returns an instance of ClassificationValidator for validation."""
         self.loss_names = ["loss"]
         return ClassificationValidator(

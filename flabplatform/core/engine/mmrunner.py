@@ -52,7 +52,7 @@ from flabplatform.core.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNC
                                HOOKS, LOG_PROCESSORS, LOOPS, MODEL_WRAPPERS,
                                MODELS, OPTIM_WRAPPERS, PARAM_SCHEDULERS,
                                VISUALIZERS, DefaultScope)
-from .baserunner import BaseRunner
+from .abcrunner import ABCRunner
 
 ConfigType = Union[Dict, Config, ConfigDict]
 ParamSchedulerType = Union[List[_ParamScheduler], Dict[str, List[_ParamScheduler]]]
@@ -74,7 +74,7 @@ class _SlicedDataset:
     def __len__(self):
         return self._length
 
-class MMRunner(BaseRunner):
+class MMRunner(ABCRunner):
     def __init__(self, cfg: Union[Dict, Config]):
         super().__init__()
         self.cfg = cfg

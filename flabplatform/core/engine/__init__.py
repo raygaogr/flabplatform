@@ -1,8 +1,8 @@
 from .utils import create_runner
 from .mmrunner import MMRunner
-from .yolorunner import YOLORunnerWarpper
+from .yolorunner import YOLOWarpper
 
 
 __all__ = [
-    "YOLORunnerWarpper", "MMRunner", "create_runner"
+    "YOLOWarpper", "MMRunner", "create_runner"
 ]

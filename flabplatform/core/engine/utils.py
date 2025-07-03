@@ -218,8 +218,8 @@ def create_runner(args):
     modelname = cfg[operation]['algoParams']['model']['type']
 
     if 'yolo' in modelname:
-        from .yolorunner import YOLORunnerWarpper
-        return YOLORunnerWarpper.from_cfg(cfg)
+        from .yolorunner import YOLOWarpper
+        return YOLOWarpper.from_cfg(cfg)
     elif 'classifier' in modelname.lower() or 'classify' in modelname.lower():
         from .classificationrunner import ClassificationRunner
         return ClassificationRunner.from_cfg(cfg)
