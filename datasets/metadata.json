@@ -4,7 +4,7 @@
     "datasets": [
         {
             "name": "imagenet",
-            "purpose": "train",
+            "purpose": "aiannotation",
             "sourceRoot": "imagenet10/train/",
             "samples": [
 

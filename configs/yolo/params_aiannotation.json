@@ -2,15 +2,15 @@
 
 {
   "operation": "aiannotation",
-  "task": "detect",
+  "task": "classify",
   "commonParams": {
     "datasets": {
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8n/classify",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/detect/train1/models",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8n/classify/models",
     "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/",
     "pipelineData": {
       "pipelineId": "",
@@ -21,7 +21,7 @@
   "aiannotation": {
     "algoParams": {
       "model": {
-        "type": "yolov8n",
+        "type": "yolov8n-cls",
         "num_classes": 80
       },
       "device": 0,

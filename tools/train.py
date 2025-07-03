@@ -87,7 +87,7 @@ def main():
         runner.train()
     elif operation == "eval" or operation == "test":
         # 验证评估：
-        val_res = runner.val()
+        runner.val()
     elif operation == "aiannotation":
         # AI标注：
         aianno = AiAnnotation(cfg)

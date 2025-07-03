@@ -104,22 +104,29 @@ class AiAnnotation:
             if self.task == "detect":
                 if results.boxes:
                     for i, box in enumerate(results.boxes):
-                        temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
+                        temp_unit = {'group_id': None, 'shape_type': 'rectangle'}
                         temp_unit['points'] = box.xyxy[0].reshape((2, 2)).tolist()
                         temp_unit["label"] = label_names[int(box.cls[0].item())]
+                        temp_unit["score"] = box.conf[0].item()
                         shapes.append(temp_unit)
                 standard_json["shapes"] = shapes
             elif self.task == "segment":
                 if results.masks:
                     for i, mask in enumerate(results.masks):
-                        temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'polygon'}
+                        temp_unit = {'group_id': None, 'shape_type': 'polygon'}
                         temp_unit['points'] = mask.xy[0].tolist()
                         cls_id = results.boxes.cls[i].item()
                         temp_unit["label"] = label_names[cls_id]
+                        temp_unit["score"] = results.boxes.conf[i].item()
                         shapes.append(temp_unit)
                 standard_json["shapes"] = shapes
             elif self.task == "classify":
-                pass
+                if results.probs:
+                    temp_unit = {'group_id': None, 'shape_type': 'classification', 'points': []}
+                    temp_unit["label"] = label_names[results.probs.top1]
+                    temp_unit["score"] = results.probs.top1conf.cpu().item()
+                    shapes.append(temp_unit)
+                standard_json["shapes"] = shapes
             else:
                 self.logger.error(f"Unsupported task type: {self.task}")
                 continue
