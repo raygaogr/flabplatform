@@ -19,8 +19,9 @@ from ultralytics.utils import callbacks, ops
 from flabplatform.flabdet.utils import LOGGER, TQDM, colorstr, emojis
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
 from flabplatform.flabdet.registry import VALIDATORS
+from flabplatform.core.engine import ABCValidator
 
-class BaseValidator:
+class BaseValidator(ABCValidator):
     """
     A base class for creating validators.
 
@@ -169,7 +170,7 @@ class BaseValidator:
             if not pt:
                 self.args.rect = False
             self.stride = model.stride  # used in get_dataloader() for padding
-            self.dataloader = self.dataloader or self.get_dataloader(self.data.get(self.args.split), self.args.batch)
+            self.dataloader = self.dataloader or self.build_dataloader(self.data.get(self.args.split), self.args.batch)
 
             model.eval()
             model.warmup(imgsz=(1 if pt else self.args.batch, 3, imgsz, imgsz))  # warmup
@@ -217,7 +218,7 @@ class BaseValidator:
         self.check_stats(stats)
         self.speed = dict(zip(self.speed.keys(), (x.t / len(self.dataloader.dataset) * 1e3 for x in dt)))
         self.finalize_metrics()
-        self.save_val_json(stats, model)
+        self.save_to_json(model)
         self.print_results()
         self.run_callbacks("on_val_end")
         if self.training:
@@ -292,7 +293,7 @@ class BaseValidator:
         for callback in self.callbacks.get(event, []):
             callback(self)
 
-    def get_dataloader(self, dataset_path, batch_size):
+    def build_dataloader(self, dataset_path, batch_size):
         """Get data loader from dataset path and batch size."""
         raise NotImplementedError("get_dataloader function not implemented for this validator")
 
@@ -361,7 +362,7 @@ class BaseValidator:
     def preds_to_labelme(self, preds, batch):
         pass
 
-    def save_val_json(self, stats, model):
+    def save_to_json(self, model):
         pass
 
     def eval_json(self, stats):
@@ -661,7 +662,7 @@ class DetectionValidator(BaseValidator):
         """
         return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, stride=self.stride)
 
-    def get_dataloader(self, dataset_path, batch_size):
+    def build_dataloader(self, dataset_path, batch_size):
         """
         Construct and return dataloader.
 
@@ -774,6 +775,7 @@ class DetectionValidator(BaseValidator):
         for b in range(batch_size):
             self.preds_to_labelme_single(im_file[b], ori_shape[b],img_shape,
                                          preds[b],save_path,save_conf)
+    
     def preds_to_labelme_single(self, 
                               im_file: str, 
                               im_ori_shape:list,
@@ -871,7 +873,7 @@ class DetectionValidator(BaseValidator):
                 LOGGER.warning(f"{pkg} unable to run: {e}")
         return stats
 
-    def save_val_json(self, stats, model):
+    def save_to_json(self, model):
         """
         Save validation metrics to a JSON file.
         Args:
@@ -899,18 +901,17 @@ class DetectionValidator(BaseValidator):
     
         # update val_metrics during training with best fitness (best model)
         if self.training:
-            cur_fitness = stats.get("fitness", 0.0)
+            cur_fitness = self.stats.get("fitness", 0.0)
             if cur_fitness >= self.fitness:
                 self.fitness = cur_fitness
-                val_metrics[self.args.task]['mAP'] = round(stats.get('metrics/mAP50(B)',0.0), 2)
-                val_metrics[self.args.task]['precision'] = round(stats.get('metrics/precision(B)',0.0),2)
-                val_metrics[self.args.task]['recall'] = round(stats.get('metrics/recall(B)',0.0),2)
+                val_metrics[self.args.task]['mAP'] = round(self.stats.get('metrics/mAP50(B)',0.0), 2)
+                val_metrics[self.args.task]['precision'] = round(self.stats.get('metrics/precision(B)',0.0),2)
+                val_metrics[self.args.task]['recall'] = round(self.stats.get('metrics/recall(B)',0.0),2)
         else:
-            val_metrics[f"{self.args.task}"]["mAP"]= round(stats.get('metrics/mAP50-95(B)', 0.0),2)
-            val_metrics[f"{self.args.task}"]["precision"] = round(stats.get('metrics/precision(B)', 0.0), 2)
-            val_metrics[f"{self.args.task}"]["recall"] = round(stats.get('metrics/recall(B)', 0.0), 2)
+            val_metrics[f"{self.args.task}"]["mAP"]= round(self.stats.get('metrics/mAP50-95(B)', 0.0),2)
+            val_metrics[f"{self.args.task}"]["precision"] = round(self.stats.get('metrics/precision(B)', 0.0), 2)
+            val_metrics[f"{self.args.task}"]["recall"] = round(self.stats.get('metrics/recall(B)', 0.0), 2)
 
 
         with open(Path(self.save_dir / "metrics.json"), "w", encoding="utf-8") as f:
             json.dump(val_metrics, f, indent=4)
-            # LOGGER.info(f"Validation metrics saved to {self.save_dir / 'metrics.json'}")

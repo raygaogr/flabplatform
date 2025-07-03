@@ -44,7 +44,7 @@ class ABCTrainer(metaclass=ABCMeta):
         )
     
     @abstractmethod
-    def preprocess_batch(self, batch):
+    def preprocess(self, batch):
         """Allows custom preprocessing model inputs and ground truths."""
         return NotImplementedError(
             "preprocess_batch function not implemented in trainer. "

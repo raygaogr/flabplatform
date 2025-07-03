@@ -158,7 +158,7 @@ class ClassificationTrainer(BaseTrainer):
                 self.model.transforms = loader.dataset.torch_transforms
         return loader
 
-    def preprocess_batch(self, batch):
+    def preprocess(self, batch):
         """Preprocesses a batch of images and classes."""
         batch["img"] = batch["img"].to(self.device)
         batch["cls"] = batch["cls"].to(self.device)

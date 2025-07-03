@@ -37,15 +37,15 @@ class AiAnnotation:
         self.producer = None
         self.running = True
 
-        try:
-            from confluent_kafka import Producer, Consumer, TopicPartition
-            self.producer = Producer(self.CONFIG["producer_conf"])
-        except Exception as e:
-            self.logger.error(f"Error initializing PrepareData: {e}")
-            self.shutdown()
+        # try:
+        #     from confluent_kafka import Producer, Consumer, TopicPartition
+        #     self.producer = Producer(self.CONFIG["producer_conf"])
+        # except Exception as e:
+        #     self.logger.error(f"Error initializing PrepareData: {e}")
+        #     self.shutdown()
         
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
+        # signal.signal(signal.SIGINT, self.handle_signal)
+        # signal.signal(signal.SIGTERM, self.handle_signal)
 
     def handle_signal(self, signum, frame):
         self.logger.info(f"Received signal {signum}, shutting down...")
@@ -157,15 +157,15 @@ class AiAnnotation:
                 }
             }
 
-            if idx == total_target_img - 1:
-                json_msg["header"]["action"] = "jobCompleted"
-            else:
-                json_msg["header"]["action"] = "progressUpdate"
-            taskID = round((idx + 1) / total_target_img * 100, 2)
-            json_msg["payload"]["progress"] = taskID
+            # if idx == total_target_img - 1:
+            #     json_msg["header"]["action"] = "jobCompleted"
+            # else:
+            #     json_msg["header"]["action"] = "progressUpdate"
+            # taskID = round((idx + 1) / total_target_img * 100, 2)
+            # json_msg["payload"]["progress"] = taskID
 
-            self.logger.info(f"Construct message: {json_msg}")
-            self.send_message(json_msg)
+            # self.logger.info(f"Construct message: {json_msg}")
+            # self.send_message(json_msg)
 
 
     def run(self):

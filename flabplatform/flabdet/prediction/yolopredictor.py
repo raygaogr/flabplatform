@@ -19,6 +19,7 @@ from ultralytics.utils.torch_utils import select_device, smart_inference_mode
 from flabplatform.flabdet.utils import DEFAULT_CFG, LOGGER, MACOS, WINDOWS, colorstr
 from flabplatform.flabdet.configs import get_cfg, get_save_dir
 from flabplatform.flabdet.registry import PREDICTORS
+from flabplatform.core.engine import ABCPredictor
 
 STREAM_WARNING = """
 WARNING ⚠️ inference results will accumulate in RAM unless `stream=True` is passed, causing potential out-of-memory
@@ -33,7 +34,7 @@ Example:
 """
 
 
-class BasePredictor:
+class BasePredictor(ABCPredictor):
     """
     A base class for creating predictors.
 
@@ -312,7 +313,7 @@ class BasePredictor:
                         "postprocess": profilers[2].dt * 1e3 / n,
                     }
                     if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
-                        s[i] += self.write_results(i, Path(paths[i]), im, s)
+                        s[i] += self.save_results(i, Path(paths[i]), im, s)
 
                 # Print batch results
                 if self.args.verbose:
@@ -362,7 +363,7 @@ class BasePredictor:
         self.args.half = self.model.fp16  # update half
         self.model.eval()
 
-    def write_results(self, i, p, im, s):
+    def save_results(self, i, p, im, s):
         """
         Write inference results to a file or directory.
 

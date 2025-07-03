@@ -614,7 +614,7 @@ class BaseTrainer(ABCTrainer):
         if self.ema:
             self.ema.update(self.model)
 
-    def preprocess_batch(self, batch):
+    def preprocess(self, batch):
         """Allows custom preprocessing model inputs and ground truths depending on task type."""
         return batch
 
@@ -938,7 +938,7 @@ class DetectionTrainer(BaseTrainer):
         workers = self.args.workers if mode == "train" else self.args.workers * 2
         return build_dataloader(dataset, batch_size, workers, shuffle, rank)  # return dataloader
 
-    def preprocess_batch(self, batch):
+    def preprocess(self, batch):
         """
         Preprocess a batch of images by scaling and converting to float.
 
