@@ -464,6 +464,15 @@ class DetectionValidator(BaseValidator):
         self.seen = 0
         self.jdict = []
         self.stats = dict(tp=[], conf=[], pred_cls=[], target_cls=[], target_img=[])
+        if not self.training:
+            confusition_matrix = {}
+            for _,c in self.names.items():
+                confusition_matrix[c] = {"TP":{"num":0,"imagePath":set()},
+                                        "FP":{"num":0,"imagePath":set()},
+                                        "TN":{"num":0,"imagePath":[]},
+                                        "FN":{"num":0,"imagePath":set()}}
+            self.conf_matrix_json = confusition_matrix
+
 
     def get_desc(self):
         """Return a formatted string summarizing class metrics of YOLO model."""
@@ -555,8 +564,9 @@ class DetectionValidator(BaseValidator):
                 if nl:
                     for k in self.stats.keys():
                         self.stats[k].append(stat[k])
-                    if self.args.plots:
-                        self.confusion_matrix.process_batch(detections=None, gt_bboxes=bbox, gt_cls=cls)
+                    if not self.training:
+                        cur_confu_matrix = self.confusion_matrix.process_batch(detections=None, gt_bboxes=bbox, gt_cls=cls)
+                        self.update_conf_matrix_json_single(cur_confu_matrix,batch["im_file"][si])
                 continue
 
             # Predictions
@@ -569,8 +579,9 @@ class DetectionValidator(BaseValidator):
             # Evaluate
             if nl:
                 stat["tp"] = self._process_batch(predn, bbox, cls)
-            if self.args.plots:
-                self.confusion_matrix.process_batch(predn, bbox, cls)
+            if not self.training: 
+                cur_confu_matrix = self.confusion_matrix.process_batch(predn, bbox, cls)
+                self.update_conf_matrix_json_single(cur_confu_matrix,batch["im_file"][si])
             for k in self.stats.keys():
                 self.stats[k].append(stat[k])
 
@@ -595,6 +606,41 @@ class DetectionValidator(BaseValidator):
         """
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
+        if not self.training:
+            # update num using self.confusion_matrix
+            all_confusion_matrix = self.confusion_matrix.matrix
+            tp_idx = np.where(np.diag(all_confusion_matrix)!=0)[0].tolist()
+            for i in tp_idx:
+                class_name = self.names[i]
+                tp = all_confusion_matrix[i,i]
+                self.conf_matrix_json[class_name]["TP"]["num"] = int(tp)
+                self.conf_matrix_json[class_name]["FN"]["num"] = int(all_confusion_matrix[:,i].sum() - tp)
+                self.conf_matrix_json[class_name]["FP"]["num"] = int(all_confusion_matrix[i,:].sum() - tp)
+            for c,d in self.conf_matrix_json.items():
+                for key in ["TP","FP","FN"]:
+                    self.conf_matrix_json[c][key]["imagePath"] = list(d[key]["imagePath"])
+            with open(Path(self.save_dir/"confusion_matrix.json"),'w', encoding="utf-8") as f:
+                json.dump(self.conf_matrix_json,f,indent=4)
+    
+    def update_conf_matrix_json_single(self,cur_con:np.array,im_file:str):
+        '''
+        Update confusion matrix json with current image 
+        args:
+            cur_con: numpy.array [num_classes+1,num_classes+1], current image's confusion matrix 
+            im_file: str, image path
+        output: 
+            None  
+        '''
+        im_file = Path(im_file).name
+        tp_idx = np.where(np.diag(cur_con)!=0)[0].tolist()
+        for i in tp_idx:
+            class_name = self.names[i]
+            tp = cur_con[i,i]
+            self.conf_matrix_json[class_name]["TP"]["imagePath"].add(im_file)
+            if cur_con[:,i].sum() - tp:
+                self.conf_matrix_json[class_name]["FN"]["imagePath"].add(im_file)
+            if cur_con[i,:].sum() - tp:
+                self.conf_matrix_json[class_name]["FP"]["imagePath"].add(im_file)
 
     def get_stats(self):
         """

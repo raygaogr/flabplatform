@@ -2,6 +2,7 @@ from pathlib import Path
 import torch
 import json
 import copy
+import numpy as np
 from ultralytics.data import build_dataloader
 from ultralytics.utils.torch_utils import get_flops
 from ultralytics.utils.metrics import ClassifyMetrics, ConfusionMatrix
@@ -88,6 +89,17 @@ class ClassificationValidator(BaseValidator):
         self.confusion_matrix = ConfusionMatrix(nc=self.nc, conf=self.args.conf, task="classify")
         self.pred = []
         self.targets = []
+        if not self.training:
+            self.im_files = []
+            confusition_matrix = {}
+            for _,c in self.names.items():
+                confusition_matrix[c] = {
+                                        "TP":{"num":0,"imagePath":[]},
+                                        "FP":{"num":0,"imagePath":[]},
+                                        "TN":{"num":0,"imagePath":[]},
+                                        "FN":{"num":0,"imagePath":[]}}
+            self.conf_matrix_json = confusition_matrix
+
 
     def preprocess(self, batch):
         """Preprocess input batch by moving data to device and converting to appropriate dtype."""
@@ -110,6 +122,9 @@ class ClassificationValidator(BaseValidator):
         n5 = min(len(self.names), 5)
         self.pred.append(preds.argsort(1, descending=True)[:, :n5].type(torch.int32).cpu())
         self.targets.append(batch["cls"].type(torch.int32).cpu())
+        if not self.training:
+            self.im_files.extend([Path(i).name for i in batch["im_file"]])
+
 
     def finalize_metrics(self, *args, **kwargs):
         """
@@ -138,6 +153,26 @@ class ClassificationValidator(BaseValidator):
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
         self.metrics.save_dir = self.save_dir
+        if not self.training:
+            self.im_files = np.array(self.im_files)
+            preds, targets = torch.cat(self.pred)[:, 0].numpy(), torch.cat(self.targets).numpy()
+            for i, n in self.names.items():  
+                # 1. TP
+                tp_idx = (preds == targets) & (targets == i)
+                self.conf_matrix_json[n]["TP"]["num"] = int(tp_idx.sum())
+                self.conf_matrix_json[n]["TP"]["imagePath"] = self.im_files[tp_idx].tolist()
+                # 2. FP
+                fp_idx = (preds == i) & (targets != i)
+                self.conf_matrix_json[n]["FP"]["num"] = int(fp_idx.sum())
+                self.conf_matrix_json[n]["FP"]["imagePath"] = self.im_files[fp_idx].tolist()
+                # 3. FN
+                fn_idx = (targets == i) & (preds != i)
+                self.conf_matrix_json[n]["FN"]["num"] = int(fn_idx.sum())
+                self.conf_matrix_json[n]["FN"]["imagePath"] = self.im_files[fn_idx].tolist()
+
+            with open(Path(self.save_dir / 'confusion_matrix.json'),'w',encoding="utf-8") as f:
+                json.dump(self.conf_matrix_json,f,indent=4)
+
 
     def postprocess(self, preds):
         """Extract the primary prediction from model output if it's in a list or tuple format."""

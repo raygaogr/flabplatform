@@ -165,6 +165,7 @@ class SegmentationValidator(DetectionValidator):
             stat["target_img"] = cls.unique()
             if npr == 0:
                 if nl:
+                    stat['m_iou'] = torch.zeros((nl,),device=self.device)
                     for k in self.stats.keys():
                         self.stats[k].append(stat[k])
                     if self.args.plots:

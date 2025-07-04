@@ -345,17 +345,22 @@ class ConfusionMatrix:
             gt_bboxes (Array[M, 4]| Array[N, 5]): Ground truth bounding boxes with xyxy/xyxyr format.
             gt_cls (Array[M]): The class labels.
         """
+        tmp_matrix = np.zeros((self.nc + 1, self.nc + 1)) if self.task == "detect" else np.zeros((self.nc, self.nc))
         if gt_cls.shape[0] == 0:  # Check if labels is empty
             if detections is not None:
                 detections = detections[detections[:, 4] > self.conf]
                 detection_classes = detections[:, 5].int()
                 for dc in detection_classes:
-                    self.matrix[dc, self.nc] += 1  # false positives
+                    # self.matrix[dc, self.nc] += 1  # false positives
+                    tmp_matrix[dc, self.nc] += 1
+            self.matrix += tmp_matrix
             return
         if detections is None:
             gt_classes = gt_cls.int()
             for gc in gt_classes:
-                self.matrix[self.nc, gc] += 1  # background FN
+                # self.matrix[self.nc, gc] += 1  # background FN
+                tmp_matrix[dc, self.nc] += 1
+            self.matrix += tmp_matrix
             return
 
         detections = detections[detections[:, 4] > self.conf]
@@ -384,13 +389,19 @@ class ConfusionMatrix:
         for i, gc in enumerate(gt_classes):
             j = m0 == i
             if n and sum(j) == 1:
-                self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+            #     self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+            # else:
+            #     self.matrix[self.nc, gc] += 1  # true background
+                tmp_matrix [detection_classes[m1[j]], gc] += 1
             else:
-                self.matrix[self.nc, gc] += 1  # true background
-
+                # self.matrix[self.nc, gc] += 1  # true background
+                tmp_matrix[self.nc, gc] += 1 
         for i, dc in enumerate(detection_classes):
             if not any(m1 == i):
-                self.matrix[dc, self.nc] += 1  # predicted background
+                # self.matrix[dc, self.nc] += 1  # predicted background
+                tmp_matrix[dc, self.nc] += 1
+        self.matrix += tmp_matrix
+        return tmp_matrix
 
     def matrix(self):
         """Return the confusion matrix."""
