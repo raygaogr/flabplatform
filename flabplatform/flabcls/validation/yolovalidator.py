@@ -92,12 +92,14 @@ class ClassificationValidator(BaseValidator):
         if not self.training:
             self.im_files = []
             confusition_matrix = {}
-            for _,c in self.names.items():
-                confusition_matrix[c] = {
-                                        "TP":{"num":0,"imagePath":[]},
-                                        "FP":{"num":0,"imagePath":[]},
-                                        "TN":{"num":0,"imagePath":[]},
-                                        "FN":{"num":0,"imagePath":[]}}
+            tmp_names = copy.deepcopy(self.names)
+            tmp_names[len(self.names)] = "unlabeled"
+            for _,c in tmp_names.items():
+                if c != "unlabeled":
+                    confusition_matrix[c] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
+                else:
+                    confusition_matrix["undetected"] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
+   
             self.conf_matrix_json = confusition_matrix
 
 
@@ -156,19 +158,10 @@ class ClassificationValidator(BaseValidator):
         if not self.training:
             self.im_files = np.array(self.im_files)
             preds, targets = torch.cat(self.pred)[:, 0].numpy(), torch.cat(self.targets).numpy()
-            for i, n in self.names.items():  
-                # 1. TP
-                tp_idx = (preds == targets) & (targets == i)
-                self.conf_matrix_json[n]["TP"]["num"] = int(tp_idx.sum())
-                self.conf_matrix_json[n]["TP"]["imagePath"] = self.im_files[tp_idx].tolist()
-                # 2. FP
-                fp_idx = (preds == i) & (targets != i)
-                self.conf_matrix_json[n]["FP"]["num"] = int(fp_idx.sum())
-                self.conf_matrix_json[n]["FP"]["imagePath"] = self.im_files[fp_idx].tolist()
-                # 3. FN
-                fn_idx = (targets == i) & (preds != i)
-                self.conf_matrix_json[n]["FN"]["num"] = int(fn_idx.sum())
-                self.conf_matrix_json[n]["FN"]["imagePath"] = self.im_files[fn_idx].tolist()
+            for p, t,img in zip(preds, targets,self.im_files):
+                self.conf_matrix_json[self.names[p]][self.names[t]]["num"] += 1
+                self.conf_matrix_json[self.names[p]][self.names[t]]["imagePath"].append(img)
+ 
 
             with open(Path(self.save_dir / 'confusion_matrix.json'),'w',encoding="utf-8") as f:
                 json.dump(self.conf_matrix_json,f,indent=4)

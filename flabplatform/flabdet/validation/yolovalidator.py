@@ -465,12 +465,15 @@ class DetectionValidator(BaseValidator):
         self.jdict = []
         self.stats = dict(tp=[], conf=[], pred_cls=[], target_cls=[], target_img=[])
         if not self.training:
+            self.im_files = []
             confusition_matrix = {}
-            for _,c in self.names.items():
-                confusition_matrix[c] = {"TP":{"num":0,"imagePath":set()},
-                                        "FP":{"num":0,"imagePath":set()},
-                                        "TN":{"num":0,"imagePath":[]},
-                                        "FN":{"num":0,"imagePath":set()}}
+            tmp_names = copy.deepcopy(self.names)
+            tmp_names[len(self.names)] = "unlabeled"
+            for _,c in tmp_names.items():
+                if c != "unlabeled":
+                    confusition_matrix[c] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
+                else:
+                    confusition_matrix["undetected"] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
             self.conf_matrix_json = confusition_matrix
 
 
@@ -607,18 +610,6 @@ class DetectionValidator(BaseValidator):
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
         if not self.training:
-            # update num using self.confusion_matrix
-            all_confusion_matrix = self.confusion_matrix.matrix
-            tp_idx = np.where(np.diag(all_confusion_matrix)!=0)[0].tolist()
-            for i in tp_idx:
-                class_name = self.names[i]
-                tp = all_confusion_matrix[i,i]
-                self.conf_matrix_json[class_name]["TP"]["num"] = int(tp)
-                self.conf_matrix_json[class_name]["FN"]["num"] = int(all_confusion_matrix[:,i].sum() - tp)
-                self.conf_matrix_json[class_name]["FP"]["num"] = int(all_confusion_matrix[i,:].sum() - tp)
-            for c,d in self.conf_matrix_json.items():
-                for key in ["TP","FP","FN"]:
-                    self.conf_matrix_json[c][key]["imagePath"] = list(d[key]["imagePath"])
             with open(Path(self.save_dir/"confusion_matrix.json"),'w', encoding="utf-8") as f:
                 json.dump(self.conf_matrix_json,f,indent=4)
     
@@ -632,15 +623,20 @@ class DetectionValidator(BaseValidator):
             None  
         '''
         im_file = Path(im_file).name
-        tp_idx = np.where(np.diag(cur_con)!=0)[0].tolist()
-        for i in tp_idx:
-            class_name = self.names[i]
-            tp = cur_con[i,i]
-            self.conf_matrix_json[class_name]["TP"]["imagePath"].add(im_file)
-            if cur_con[:,i].sum() - tp:
-                self.conf_matrix_json[class_name]["FN"]["imagePath"].add(im_file)
-            if cur_con[i,:].sum() - tp:
-                self.conf_matrix_json[class_name]["FP"]["imagePath"].add(im_file)
+        tmp_names = copy.deepcopy(self.names)
+        tmp_names[len(self.names)] = "unlabeled"
+        for i, c in enumerate(tmp_names.values()):
+            if c != "unlabeled":
+                for j, d in enumerate(tmp_names.values()):
+                    if cur_con[i,j] > 0:
+                        self.conf_matrix_json[c][d]["num"] += int(cur_con[i,j])
+                        self.conf_matrix_json[c][d]["imagePath"].append(im_file)
+            else:
+                for j, d in enumerate(tmp_names.values()):
+                    if cur_con[i,j] > 0:
+                        self.conf_matrix_json["undetected"][d]["num"] += int(cur_con[i,j])
+                        self.conf_matrix_json["undetected"][d]["imagePath"].append(im_file)
+
 
     def get_stats(self):
         """
