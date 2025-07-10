@@ -465,16 +465,7 @@ class DetectionValidator(BaseValidator):
         self.jdict = []
         self.stats = dict(tp=[], conf=[], pred_cls=[], target_cls=[], target_img=[])
         if not self.training:
-            self.im_files = []
-            confusition_matrix = {}
-            tmp_names = copy.deepcopy(self.names)
-            tmp_names[len(self.names)] = "unlabeled"
-            for _,c in tmp_names.items():
-                if c != "unlabeled":
-                    confusition_matrix[c] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
-                else:
-                    confusition_matrix["undetected"] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
-            self.conf_matrix_json = confusition_matrix
+            self.conf_matrix_json = {}
 
 
     def get_desc(self):
@@ -610,6 +601,7 @@ class DetectionValidator(BaseValidator):
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
         if not self.training:
+            self.conf_matrix_json["labels"]= list(self.names.values())
             with open(Path(self.save_dir/"confusion_matrix.json"),'w', encoding="utf-8") as f:
                 json.dump(self.conf_matrix_json,f,indent=4)
     
@@ -623,19 +615,20 @@ class DetectionValidator(BaseValidator):
             None  
         '''
         im_file = Path(im_file).name
-        tmp_names = copy.deepcopy(self.names)
-        tmp_names[len(self.names)] = "unlabeled"
-        for i, c in enumerate(tmp_names.values()):
-            if c != "unlabeled":
-                for j, d in enumerate(tmp_names.values()):
-                    if cur_con[i,j] > 0:
-                        self.conf_matrix_json[c][d]["num"] += int(cur_con[i,j])
-                        self.conf_matrix_json[c][d]["imagePath"].append(im_file)
-            else:
-                for j, d in enumerate(tmp_names.values()):
-                    if cur_con[i,j] > 0:
-                        self.conf_matrix_json["undetected"][d]["num"] += int(cur_con[i,j])
-                        self.conf_matrix_json["undetected"][d]["imagePath"].append(im_file)
+        gt_tmp_names,p_tmp_names = copy.deepcopy(self.names),copy.deepcopy(self.names)
+        gt_tmp_names[len(self.names)] = "unlabeled"
+        p_tmp_names[len(self.names)] = "undetected"
+        pre_idx, gt_idx = np.where(cur_con > 0)
+        for i in range(len(gt_idx)):
+            g = gt_idx[i]
+            p = pre_idx[i]
+            if gt_tmp_names[g] not in self.conf_matrix_json:
+                self.conf_matrix_json[gt_tmp_names[g]] = {}
+            if p_tmp_names[p] not in self.conf_matrix_json[gt_tmp_names[g]]:
+                self.conf_matrix_json[gt_tmp_names[g]][p_tmp_names[p]] = {"num": 0, "imagePath": []}
+            self.conf_matrix_json[gt_tmp_names[g]][p_tmp_names[p]]["num"] += int(cur_con[p, g])
+            self.conf_matrix_json[gt_tmp_names[g]][p_tmp_names[p]]["imagePath"].append(im_file)
+
 
 
     def get_stats(self):

@@ -91,16 +91,7 @@ class ClassificationValidator(BaseValidator):
         self.targets = []
         if not self.training:
             self.im_files = []
-            confusition_matrix = {}
-            tmp_names = copy.deepcopy(self.names)
-            tmp_names[len(self.names)] = "unlabeled"
-            for _,c in tmp_names.items():
-                if c != "unlabeled":
-                    confusition_matrix[c] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
-                else:
-                    confusition_matrix["undetected"] = {f"{k}": {"num": 0, "imagePath": []} for k in tmp_names.values()}
-   
-            self.conf_matrix_json = confusition_matrix
+
 
 
     def preprocess(self, batch):
@@ -158,13 +149,22 @@ class ClassificationValidator(BaseValidator):
         if not self.training:
             self.im_files = np.array(self.im_files)
             preds, targets = torch.cat(self.pred)[:, 0].numpy(), torch.cat(self.targets).numpy()
-            for p, t,img in zip(preds, targets,self.im_files):
-                self.conf_matrix_json[self.names[p]][self.names[t]]["num"] += 1
-                self.conf_matrix_json[self.names[p]][self.names[t]]["imagePath"].append(img)
+            confusion_matrix_json = {}
+            confusion_matrix_json["labels"] = list(self.names.values())
+            for i in range(len(targets)):
+                gt_cls = self.names[targets[i]]
+                pred_cls = self.names[preds[i]]
+                img_name = self.im_files[i]
+                if gt_cls not in confusion_matrix_json:
+                    confusion_matrix_json[gt_cls] = {}
+                if pred_cls not in confusion_matrix_json[gt_cls]:
+                    confusion_matrix_json[gt_cls][pred_cls] = {"num": 0, "imagePath": []}
+                confusion_matrix_json[gt_cls][pred_cls]["num"] += 1
+                confusion_matrix_json[gt_cls][pred_cls]["imagePath"].append(img_name)   
  
 
             with open(Path(self.save_dir / 'confusion_matrix.json'),'w',encoding="utf-8") as f:
-                json.dump(self.conf_matrix_json,f,indent=4)
+                json.dump(confusion_matrix_json,f,indent=4)
 
 
     def postprocess(self, preds):
