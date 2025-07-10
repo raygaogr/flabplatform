@@ -85,6 +85,9 @@ def main():
     if operation == "training":
         # 训练：
         runner.train()
+        # res = runner.predict("assets/test.jpg")  # 测试预测
+        # for r in res:
+        #     print(r)
     elif operation == "eval" or operation == "test":
         # 验证评估：
         runner.val()

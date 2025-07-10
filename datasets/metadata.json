@@ -5,7 +5,7 @@
         {
             "name": "imagenet",
             "purpose": "test",
-            "sourceRoot": "coco8-seg/train/",
+            "sourceRoot": "coco8/train/",
             "samples": [
 
             ]

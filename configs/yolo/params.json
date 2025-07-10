@@ -16,7 +16,7 @@
   "training": {
     "algoParams": {
       "model": {
-        "type": "yolov8n-det",
+        "type": "yolov8n",
         "num_classes": 80
       },
       "epochs": 2,
