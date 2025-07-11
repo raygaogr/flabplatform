@@ -354,14 +354,14 @@ class ConfusionMatrix:
                     # self.matrix[dc, self.nc] += 1  # false positives
                     tmp_matrix[dc, self.nc] += 1
             self.matrix += tmp_matrix
-            return
+            return tmp_matrix         
         if detections is None:
             gt_classes = gt_cls.int()
             for gc in gt_classes:
                 # self.matrix[self.nc, gc] += 1  # background FN
                 tmp_matrix[dc, self.nc] += 1
             self.matrix += tmp_matrix
-            return
+            return tmp_matrix
 
         detections = detections[detections[:, 4] > self.conf]
         gt_classes = gt_cls.int()

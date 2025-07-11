@@ -71,7 +71,7 @@ class SegmentationTrainer(DetectionTrainer):
 
         return model
 
-    def get_validator(self):
+    def build_validator(self):
         """Return an instance of SegmentationValidator for validation of YOLO model."""
         self.loss_names = "box_loss", "seg_loss", "cls_loss", "dfl_loss"
         return SegmentationValidator(

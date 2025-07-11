@@ -4,8 +4,16 @@
     "datasets": [
         {
             "name": "imagenet",
-            "purpose": "test",
-            "sourceRoot": "coco8/train/",
+            "purpose": "train",
+            "sourceRoot": "coco8-seg/train/",
+            "samples": [
+
+            ]
+        },
+        {
+            "name": "imagenet",
+            "purpose": "eval",
+            "sourceRoot": "coco8-seg/val/",
             "samples": [
 
             ]

@@ -2,25 +2,25 @@
 
 {
   "operation": "training, eval",
-  "task": "detect",
+  "task": "segment",
   "commonParams": {
     "datasets": {
       "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
       "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect",
+    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/segment",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect/models",
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/segment/models",
     "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models"
   },
   "training": {
     "algoParams": {
       "model": {
-        "type": "yolov8n",
+        "type": "yolov8n-seg",
         "num_classes": 80
       },
-      "epochs": 2,
-      "batch": 2, 
+      "epochs": 100,
+      "batch": 16, 
       "img_size": 640,
       "optimizer":  "Adam", 
       "lr": 0.01, 
@@ -29,7 +29,7 @@
       "weight_decay": 0.0005,
       "momentum": 0.937,
       "scheduler": "cos_lr",
-      "patience": 2,
+      "patience": 100,
       "workers": 8, 
       "seed": 0,
       "device": 0,
