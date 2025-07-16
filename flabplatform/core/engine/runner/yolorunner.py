@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import Any, Dict, List, Union
 import torch
@@ -1560,3 +1559,4 @@ class YOLOE(YOLORunner):
             self.predictor = None  # reset predictor
 
         return super().predict(source, stream, **kwargs)
+
