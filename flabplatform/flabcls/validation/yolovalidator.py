@@ -260,7 +260,7 @@ class ClassificationValidator(BaseValidator):
         if not hasattr(self, 'flops') or self.flops is None:
             self.flops = get_flops(copy.deepcopy(model).float().to(self.device), imgsz=640) # calculate FLOPs if not already done
 
-        fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
+        fps = 1000 / (self.dataloader.batch_size * (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess']))
         val_metrics = {
             "operation":self.args.task,
             "performance": {
@@ -337,6 +337,7 @@ class ClassificationValidator(BaseValidator):
             "group_id": None,
             "description": None,
             "shape_type": "classification",
+            "score": round(pred[class_idx].item(),4)
         }]
         standard_json["shapes"] = shapes
         with open(save_path / f"{Path(im_file).stem}.json", 'w', encoding='utf-8') as f:

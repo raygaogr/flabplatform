@@ -805,7 +805,7 @@ class DetectionValidator(BaseValidator):
         save_path.mkdir(parents=True, exist_ok=True)
         im_file = batch["im_file"] # a batch of image files with absolute path
         ori_shape = batch["ori_shape"] # original shape of the images
-        save_conf = self.args.conf# whether to save confidence scores
+        save_conf = 0.2 # whether to save confidence scores
         img_shape = batch["img"].shape[2:] # shape of the images
         for b in range(batch_size):
             self.preds_to_labelme_single(im_file[b], ori_shape[b],img_shape,
@@ -848,6 +848,7 @@ class DetectionValidator(BaseValidator):
                     temp_unit = {'flags': [], 'group_id': None, 'shape_type': 'rectangle'}
                     temp_unit['points'] = box.reshape((2, 2)).tolist()
                     temp_unit["label"] = self.data['names'][cls_idx]
+                    temp_unit["score"] = round(pred[:,4][i].item(),4)
                     shapes.append(temp_unit)
         standard_json["shapes"] = shapes
         with open(save_path / f"{Path(im_file).stem}.json", 'w', encoding='utf-8') as f:
@@ -923,7 +924,7 @@ class DetectionValidator(BaseValidator):
         if not hasattr(self, 'flops') or self.flops is None:
             self.flops = get_flops(copy.deepcopy(model).float().to(self.device), imgsz=640) # calculate FLOPs if not already done
 
-        fps = 1000 / (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess'])
+        fps = 1000 / (self.dataloader.batch_size * (self.speed['preprocess']  + self.speed['inference'] +self.speed['postprocess']))
         val_metrics = {
             "operation":self.args.task,
             "performance": {

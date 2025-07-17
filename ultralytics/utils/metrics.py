@@ -359,7 +359,7 @@ class ConfusionMatrix:
             gt_classes = gt_cls.int()
             for gc in gt_classes:
                 # self.matrix[self.nc, gc] += 1  # background FN
-                tmp_matrix[dc, self.nc] += 1
+                tmp_matrix[self.nc, gc] += 1
             self.matrix += tmp_matrix
             return tmp_matrix
 
