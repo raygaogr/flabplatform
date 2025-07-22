@@ -1,5 +1,6 @@
 _base_: [
-    '../../flabplatform/flabdet/configs/datasets/mmdet/coco_detection.yaml', '../../flabplatform/flabdet/configs/_base_/default_runtime.yaml'
+    '../../../datasets/mmdet/coco_detection.yaml', 
+    '../../../_base_/default_runtime.yaml'
 ]
 
 model:
@@ -149,6 +150,7 @@ optim_wrapper:
         type: 'AdamW'
         lr: 0.0001
         weight_decay: 0.0001
+        momentum: 0.958
     clip_grad:
         max_norm: 0.1
         norm_type: 2

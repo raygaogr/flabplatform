@@ -78,7 +78,7 @@ def main():
     set_environ(device)
 
     from flabplatform.core.engine import create_runner
-    from flabplatform.core.engine.utils import AiAnnotation
+    from flabplatform.core.engine.utils.utils import AiAnnotation
     # 构建执行器
     runner = create_runner(args)
 

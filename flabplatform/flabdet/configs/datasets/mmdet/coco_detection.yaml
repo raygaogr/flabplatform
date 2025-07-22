@@ -17,6 +17,9 @@ data_root: &_data_root 'datasets/coco8/'
 #     }))
 backend_args: &_backend_args null
 
+batch_size: &_batch_size 2
+num_workers: &_num_workers 4
+
 train_pipeline: &_train_pipeline
     - type: 'LoadImageFromFile'
       backend_args: *_backend_args
@@ -41,8 +44,8 @@ test_pipeline: &_test_pipeline
       meta_keys: ['img_id', 'img_path', 'ori_shape', 'img_shape', 'scale_factor']
 
 train_dataloader:
-    batch_size: 2
-    num_workers: 2
+    batch_size: *_batch_size
+    num_workers: *_num_workers
     persistent_workers: true
     sampler:
         type: 'DefaultSampler'
@@ -62,8 +65,8 @@ train_dataloader:
         backend_args: *_backend_args
 
 val_dataloader: &_val_dataloader
-    batch_size: 2
-    num_workers: 2
+    batch_size: *_batch_size
+    num_workers: *_num_workers
     persistent_workers: true
     drop_last: false
     sampler:

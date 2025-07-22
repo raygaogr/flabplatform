@@ -9,6 +9,7 @@ import warnings
 from collections import OrderedDict
 from functools import partial
 from typing import Callable, Dict, List, Optional, Sequence, Union
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -82,8 +83,67 @@ class MMRunner(ABCRunner):
     @classmethod
     def from_cfg(cls, cfg: Union[Dict, Config]) -> 'MMRunner':
         cfg = copy.deepcopy(cfg)
-        def parse_cfg():
+
+        FILE = Path(__file__).resolve()
+        MM_ROOT = FILE.parents[2]
+        DEFAULT_CFG_PATH = {
+            "dab_detr": MM_ROOT / "flabdet/configs/models/mmdet/dab_detr/dab_detr.yaml",
+        }
+
+        def get_default_cfg(cfg):
+            operation = cfg.operation
+            if "training" in operation:
+                operation = "training"
+            modelname = cfg[operation]['algoParams']['model']['type']
+            default_cfg = Config.fromfile(DEFAULT_CFG_PATH[modelname])
+            return default_cfg
+        
+        IGNORE_KEYS = ["mqTopic", "rootDir", "pipelineData"] #TODO
+        KEY_MAP = {
+            "epochs": "max_epochs",
+            "batch": "batch_size",
+            "optimizer": "optim_wrapper.optimizer.type",
+            "lr": "optim_wrapper.optimizer.lr",
+            "weight_decay": "optim_wrapper.optimizer.weight_decay",
+            "momentum": "optim_wrapper.optimizer.momentum",
+            "scheduler": "param_scheduler.0.type",
+            "workers": "num_workers",
+            "seed": "randomness.seed",
+            "operation": "mode",
+            "outputDir": "work_dir",
+        }
+
+        def parse_dict(input_dict, output_dict):
+            for k, v in input_dict.items():
+                if k in IGNORE_KEYS:
+                    continue
+                elif k == "model":
+                    v.pop("num_classes", None)
+                    output_dict[k] = v
+                elif k in KEY_MAP:
+                    if v == "cos_lr":
+                        v = "MultiStepLR"
+                    output_dict[KEY_MAP[k]] = v
+                else:
+                    if isinstance(v, dict):
+                        parse_dict(v, output_dict)
+                    else:
+                        output_dict[k] = v
+            return output_dict
+
+        def parse_data():
             pass
+
+        def merge_cfg(cfg, default_cfg):
+            # cfg.work_dir = osp.join('./res', osp.splitext(osp.basename(args.config))[0])
+            default_cfg.optim_wrapper.type = 'AmpOptimWrapper'
+            default_cfg.optim_wrapper.loss_scale = 'dynamic'
+            default_cfg.merge_from_dict(cfg)
+            return default_cfg
+        
+        default_cfg = get_default_cfg(cfg)
+        new_cfg = parse_dict(cfg, {})
+        cfg = merge_cfg(new_cfg, default_cfg)
         runner = cls(cfg)
         return runner
     

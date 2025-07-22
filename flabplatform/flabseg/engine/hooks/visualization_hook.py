@@ -36,7 +36,7 @@ class SegVisualizationHook(Hook):
             Notes: flabplatform.flabcv>=2.0.0rc4, mmengine>=0.2.0 required.
     """
     # from mmengine.runner import Runner
-    from flabplatform.core.engine import mmrunner as Runner
+    from flabplatform.core.engine.runner import mmrunner as Runner
     def __init__(self,
                  draw: bool = False,
                  interval: int = 50,

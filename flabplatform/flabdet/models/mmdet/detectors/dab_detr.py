@@ -9,7 +9,7 @@ from ..layers.transformer import (DABDetrTransformerDecoder,
                                   DABDetrTransformerEncoder, inverse_sigmoid)
 from .detr import DETR
 
-@MODELS.register_module()
+@MODELS.register_module(name="dab_detr")
 class DABDETR(DETR):
     r"""Implementation of `DAB-DETR:
     Dynamic Anchor Boxes are Better Queries for DETR.

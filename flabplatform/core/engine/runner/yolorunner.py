@@ -1191,7 +1191,6 @@ class YOLOWarpper(YOLORunner):
                     continue
                 elif k == "outputDir":
                     output_dict["save_dir"] = v
-                    SETTINGS.update(dict(runs_dir=v))
                 elif k == "img_size":
                     output_dict["imgsz"] = v
                 elif k == "lr":
@@ -1222,7 +1221,6 @@ class YOLOWarpper(YOLORunner):
             data_cfg = Config.fromfile(input_dict["data"])
             input_dict["data"] = dict()
             input_dict["data"]["path"] = cfg_dict["commonParams"]["datasets"]["rootDir"]
-            SETTINGS.update(dict(datasets_dir=input_dict["data"]["path"]))
             input_dict["data"]["names"] = data_cfg.get("labels", [])
             input_dict["data"]["train"] = list()
             input_dict["data"]["val"] = list()
@@ -1252,6 +1250,8 @@ class YOLOWarpper(YOLORunner):
 
         overrides = parse_dict(cfg_dict, {})
         overrides = parse_data(overrides)
+        SETTINGS.update(dict(runs_dir=overrides["save_dir"]))
+        SETTINGS.update(dict(datasets_dir=overrides["data"]["path"]))
         return cls(cfg=overrides)
         
     @property

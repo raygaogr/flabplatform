@@ -199,23 +199,6 @@ class AiAnnotation:
             self.logger.error(f'Error during data preparation shutdown: {e}')
         self.logger.info('Data preparation shutdown complete.')
 
-def merge_args(cfg, args):
-    cfg.work_dir = osp.join('./res', osp.splitext(osp.basename(args.config))[0])
-
-    # # enable automatic-mixed-precision training
-    # if args.amp is True:
-    cfg.optim_wrapper.type = 'AmpOptimWrapper'
-    cfg.optim_wrapper.loss_scale = 'dynamic'
-
-    # if args.resume == 'auto':
-    # cfg.resume = True
-    # cfg.load_from = None
-    # elif args.resume is not None:
-    #     cfg.resume = True
-    #     cfg.load_from = args.resume
-    return cfg
-
-
 def create_runner(args):
     """Create a runner instance."""
     cfg = Config.fromfile(args.config)
@@ -225,12 +208,11 @@ def create_runner(args):
     modelname = cfg[operation]['algoParams']['model']['type']
 
     if 'yolo' in modelname:
-        from .yolorunner import YOLOWarpper
+        from ..runner.yolorunner import YOLOWarpper
         return YOLOWarpper.from_cfg(cfg)
     elif 'classifier' in modelname.lower() or 'classify' in modelname.lower():
-        from .classificationrunner import ClassificationRunner
+        from ..runner.classificationrunner import ClassificationRunner
         return ClassificationRunner.from_cfg(cfg)
     else:
-        from .mmrunner import MMRunner
-        cfg = merge_args(cfg, args)
+        from ..runner.mmrunner import MMRunner
         return MMRunner.from_cfg(cfg)

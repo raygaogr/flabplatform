@@ -1,5 +1,5 @@
 _base_: [
-    './dab-detr_r50_8xb2-50e_coco.yaml'
+    './dab_detr_r50_8xb2_50e_coco.yaml'
 ]
 
 model: &_model
@@ -18,8 +18,7 @@ optim_wrapper:
         lr: 0.0001
         weight_decay: 0.0001
 
-max_epochs: &_max_epochs 2
-
+max_epochs: 1
 
 randomness:
     deterministic: False # (bool) whether to enable deterministic mode

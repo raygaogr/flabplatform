@@ -49,7 +49,7 @@ from flabplatform.flabdet.utils.yolos import (
 from flabplatform import __version__
 from flabplatform.flabdet.registry import TRAINERS, VALIDATORS, DATASETS, MODELS
 from ultralytics.data import build_dataloader
-from flabplatform.core.engine.abctrainer import ABCTrainer
+from flabplatform.core.engine.train.abctrainer import ABCTrainer
 
 class BaseTrainer(ABCTrainer):
     """
@@ -590,7 +590,7 @@ class BaseTrainer(ABCTrainer):
         Load, create, or download model for any task.
 
         Returns:
-            (dict): Optional checkpoint to resume training from.
+            (dict): Optional checkpoint to resume training from. 
         """
         if isinstance(self.model, torch.nn.Module):  # if model is loaded beforehand. No setup needed
             return
@@ -603,7 +603,7 @@ class BaseTrainer(ABCTrainer):
         elif isinstance(self.args.pretrained, (str, Path)):
             weights, _ = attempt_load_one_weight(self.args.pretrained)
         self.model = self.get_model(cfg=cfg, weights=weights, verbose=RANK == -1)  # calls Model(cfg, weights)
-        return ckpt
+        return ckpt # ckpt用于恢复训练
 
     def optimizer_step(self):
         """Perform a single step of the training optimizer with gradient clipping and EMA update."""
