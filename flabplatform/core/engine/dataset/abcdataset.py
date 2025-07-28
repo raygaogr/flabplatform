@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import functools
 import gc
@@ -11,7 +10,6 @@ import numpy as np
 from torch.utils.data import Dataset
 
 from flabplatform.core.config import Config
-
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import TRANSFORMS
 from mmengine.utils import is_abs
@@ -215,7 +213,7 @@ class BaseDataset(Dataset):
     _fully_initialized: bool = False
 
     def __init__(self,
-                 ann_file: Optional[str] = '',
+                 ann_file: Optional[str] = None,
                  metainfo: Union[Mapping, Config, None] = None,
                  data_root: Optional[str] = '',
                  data_prefix: dict = dict(img_path=''),
@@ -434,7 +432,7 @@ class BaseDataset(Dataset):
         """  # noqa: E501
         # `self.ann_file` denotes the absolute annotation file path if
         # `self.root=None` or relative path if `self.root=/path/to/data/`.
-        from mmengine.fileio import join_path, list_from_file, load
+        from mmengine.fileio import load
         annotations = load(self.ann_file)
         if not isinstance(annotations, dict):
             raise TypeError(f'The annotations loaded from annotation file '
@@ -496,7 +494,7 @@ class BaseDataset(Dataset):
         if not isinstance(metainfo, (Mapping, Config)):
             raise TypeError('metainfo should be a Mapping or Config, '
                             f'but got {type(metainfo)}')
-        from mmengine.fileio import join_path, list_from_file, load
+        from mmengine.fileio import list_from_file
         for k, v in metainfo.items():
             if isinstance(v, str):
                 # If type of value is string, and can be loaded from
@@ -540,19 +538,27 @@ class BaseDataset(Dataset):
         """
         # Automatically join annotation file path with `self.root` if
         # `self.ann_file` is not an absolute path.
-        from mmengine.fileio import join_path, list_from_file, load
+        from mmengine.fileio import join_path
         if self.ann_file and not is_abs(self.ann_file) and self.data_root:
             self.ann_file = join_path(self.data_root, self.ann_file)
         # Automatically join data directory with `self.root` if path value in
         # `self.data_prefix` is not an absolute path.
         for data_key, prefix in self.data_prefix.items():
-            if not isinstance(prefix, str):
-                raise TypeError('prefix should be a string, but got '
-                                f'{type(prefix)}')
-            if not is_abs(prefix) and self.data_root:
-                self.data_prefix[data_key] = join_path(self.data_root, prefix)
+            # if not isinstance(prefix, str):
+            #     raise TypeError('prefix should be a string, but got '
+            #                     f'{type(prefix)}')
+            if isinstance(prefix, list):
+                # If prefix is a list, join each element with `self.data_root`
+                # and set the joined list to `self.data_prefix[data_key]`.
+                self.data_prefix[data_key] = [
+                    join_path(self.data_root, p) if not is_abs(p) else p
+                    for p in prefix
+                ]
             else:
-                self.data_prefix[data_key] = prefix
+                if not is_abs(prefix) and self.data_root:
+                    self.data_prefix[data_key] = join_path(self.data_root, prefix)
+                else:
+                    self.data_prefix[data_key] = prefix
 
     @force_full_init
     def get_subset_(self, indices: Union[Sequence[int], int]) -> None:

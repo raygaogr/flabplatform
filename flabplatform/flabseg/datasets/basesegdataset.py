@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Union
 # import mmengine
 import mmengine.fileio as fileio
 import numpy as np
-from mmengine.dataset import BaseDataset, Compose
+from flabplatform.core.engine.dataset.abcdataset import BaseDataset, Compose
 
 from flabplatform.flabseg.registry import DATASETS
 

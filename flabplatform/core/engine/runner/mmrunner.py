@@ -53,6 +53,7 @@ from flabplatform.core.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNC
                                HOOKS, LOG_PROCESSORS, LOOPS, MODEL_WRAPPERS,
                                MODELS, OPTIM_WRAPPERS, PARAM_SCHEDULERS,
                                VISUALIZERS, DefaultScope)
+import json
 from .abcrunner import ABCRunner
 
 ConfigType = Union[Dict, Config, ConfigDict]
@@ -84,46 +85,48 @@ class MMRunner(ABCRunner):
     def from_cfg(cls, cfg: Union[Dict, Config]) -> 'MMRunner':
         cfg = copy.deepcopy(cfg)
 
-        FILE = Path(__file__).resolve()
-        MM_ROOT = FILE.parents[2]
+        MM_ROOT = Path(__file__).resolve().parents[3]
         DEFAULT_CFG_PATH = {
-            "dab_detr": MM_ROOT / "flabdet/configs/models/mmdet/dab_detr/dab_detr.yaml",
+            "dab_detr":  MM_ROOT / "flabdet/configs/models/mmdet/dab_detr/dab_detr_r50_8xb2_50e_coco.yaml",
         }
 
-        def get_default_cfg(cfg):
-            operation = cfg.operation
-            if "training" in operation:
-                operation = "training"
-            modelname = cfg[operation]['algoParams']['model']['type']
-            default_cfg = Config.fromfile(DEFAULT_CFG_PATH[modelname])
-            return default_cfg
-        
-        IGNORE_KEYS = ["mqTopic", "rootDir", "pipelineData"] #TODO
+        IGNORE_KEYS = ["mqTopic", "pipelineData"] #TODO 
         KEY_MAP = {
-            "epochs": "max_epochs",
-            "batch": "batch_size",
-            "optimizer": "optim_wrapper.optimizer.type",
-            "lr": "optim_wrapper.optimizer.lr",
-            "weight_decay": "optim_wrapper.optimizer.weight_decay",
-            "momentum": "optim_wrapper.optimizer.momentum",
-            "scheduler": "param_scheduler.0.type",
-            "workers": "num_workers",
-            "seed": "randomness.seed",
-            "operation": "mode",
-            "outputDir": "work_dir",
+            "optimizer": ["optim_wrapper.optimizer.type"],  
+            "lr": ["optim_wrapper.optimizer.lr"],
+            "weight_decay": ["optim_wrapper.optimizer.weight_decay"],
+            "scheduler": ["param_scheduler.0.type"],
+            "seed": ["randomness.seed"],
+            "operation": ["mode"],
+            "outputDir": ["work_dir"],
+            "epochs": ["train_cfg.max_epochs", "param_scheduler.0.end"],
+            "batch": ["train_dataloader.batch_size", "val_dataloader.batch_size"],
+            "workers": ["train_dataloader.num_workers", "val_dataloader.num_workers"],
+            "metafile": ["data_cfg"],
+            "rootDir": ["train_dataloader.dataset.data_root", "val_dataloader.dataset.data_root"]
         }
 
-        def parse_dict(input_dict, output_dict):
-            for k, v in input_dict.items():
+        def parse_dict(cfg, output_dict):
+            for k, v in cfg.items():
                 if k in IGNORE_KEYS:
                     continue
                 elif k == "model":
                     v.pop("num_classes", None)
                     output_dict[k] = v
+                elif k == "momentum":
+                    if cfg["optimizer"] in ["Adam", "Adamax", "AdamW", "NAdam", "RAdam"]:
+                        output_dict["optim_wrapper.optimizer.betas"] = (v, 0.999)
+                    else:
+                        output_dict["optim_wrapper.optimizer.momentum"] = v
+                elif k == "metafile":
+                    output_dict = parse_data(output_dict, v)
                 elif k in KEY_MAP:
                     if v == "cos_lr":
                         v = "MultiStepLR"
-                    output_dict[KEY_MAP[k]] = v
+                    if v == "training":
+                        v = "train"
+                    for key in KEY_MAP[k]:
+                        output_dict[key] = v
                 else:
                     if isinstance(v, dict):
                         parse_dict(v, output_dict)
@@ -131,20 +134,50 @@ class MMRunner(ABCRunner):
                         output_dict[k] = v
             return output_dict
 
-        def parse_data():
-            pass
+        def parse_data(raw_cfg, data_cfg_file):
+            with open(data_cfg_file, "r") as f:
+                data_cfg = json.load(f)
+            
+            if "labelRemap" in data_cfg:
+                data_cfg["labels"] = list(data_cfg["labelRemap"].keys())
+            if not "labels" in data_cfg:
+                raise ValueError("Labels not found in metadata.json, please check the file.")
+            if raw_cfg["task"] == "detect":
+                raw_cfg["model.bbox_head.num_classes"] = len(data_cfg["labels"])
 
-        def merge_cfg(cfg, default_cfg):
-            # cfg.work_dir = osp.join('./res', osp.splitext(osp.basename(args.config))[0])
-            default_cfg.optim_wrapper.type = 'AmpOptimWrapper'
-            default_cfg.optim_wrapper.loss_scale = 'dynamic'
-            default_cfg.merge_from_dict(cfg)
-            return default_cfg
-        
-        default_cfg = get_default_cfg(cfg)
-        new_cfg = parse_dict(cfg, {})
-        cfg = merge_cfg(new_cfg, default_cfg)
-        runner = cls(cfg)
+            raw_cfg["train_dataloader.dataset.data_prefix.img"] = list()
+            raw_cfg["val_dataloader.dataset.data_prefix.img"] = list()
+            valid_purposes = ["train", "eval", "test"]
+            exist_purpose = []
+            for dataset in data_cfg["datasets"]:
+                dataset_purpose = dataset["purpose"]
+                if dataset_purpose in valid_purposes:
+                    if dataset["purpose"] == "eval" or dataset["purpose"] == "test":
+                        dataset_purpose = "val" 
+                    if dataset["purpose"] == "activeLearning":
+                        dataset_purpose = "train"
+                        exist_purpose.append(dataset["purpose"])
+                    exist_purpose.append(dataset_purpose)
+                    raw_cfg[f"{dataset_purpose}_dataloader.dataset.metainfo.classes"] = data_cfg["labels"]
+                    if len(dataset["samples"]) == 0:
+                        raw_cfg[f"{dataset_purpose}_dataloader.dataset.data_prefix.img"].append(dataset["sourceRoot"])
+                    else:
+                        for sample in dataset["samples"]:
+                            raw_cfg[f"{dataset_purpose}_dataloader.dataset.data_prefix.img"].append(os.path.join(dataset["sourceRoot"], sample["image"]))
+            if len(raw_cfg["val_dataloader.dataset.data_prefix.img"]) == 0 and raw_cfg["mode"] == "train":
+                raw_cfg["val_dataloader.dataset.data_prefix.img"] = raw_cfg["train_dataloader.dataset.data_prefix.img"]
+                raw_cfg["val_dataloader.dataset.metainfo.classes"] = raw_cfg["train_dataloader.dataset.metainfo.classes"]
+            raw_cfg["optim_wrapper.type"] = 'AmpOptimWrapper'
+            raw_cfg["optim_wrapper.loss_scale"] = 'dynamic'
+            return raw_cfg
+
+        update_dict = parse_dict(cfg.to_dict(), {})
+        modelname = update_dict['model']['type']
+        default_cfg_path = DEFAULT_CFG_PATH[modelname]
+        default_cfg = Config.fromfile(default_cfg_path)
+        default_cfg.merge_from_dict(update_dict)
+        default_cfg["test_dataloader"] = default_cfg["val_dataloader"]
+        runner = cls(default_cfg)
         return runner
     
     def __call__(self, source = None, **kwargs):
@@ -477,11 +510,11 @@ class MMTrainer:
         if experiment_name is not None:
             self._experiment_name = f'{experiment_name}_{self._timestamp}'
         elif self.cfg.filename is not None:
-            filename_no_ext = osp.splitext(osp.basename(self.cfg.filename))[0]
+            filename_no_ext = osp.splitext(osp.basename(self.cfg.filename))[0] # TODO
             self._experiment_name = f'{filename_no_ext}_{self._timestamp}'
         else:
             self._experiment_name = self.timestamp
-        self._log_dir = osp.join(self.work_dir, self.timestamp)
+        self._log_dir = osp.join(self.work_dir, self.timestamp) # TODO
         mmengine.mkdir_or_exist(self._log_dir)
         # Used to reset registries location. See :meth:`Registry.build` for
         # more details.

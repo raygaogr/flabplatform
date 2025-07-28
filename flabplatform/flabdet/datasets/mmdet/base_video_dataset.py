@@ -4,9 +4,8 @@ from collections import defaultdict
 from typing import Any, List, Tuple
 
 import mmengine.fileio as fileio
-from mmengine.dataset import BaseDataset
 from flabplatform.core.logging import print_log
-
+from flabplatform.core.engine.dataset.abcdataset import BaseDataset
 from flabplatform.flabdet.datasets.mmdet.api_wrappers import COCO
 from flabplatform.flabdet.registry import DATASETS
 

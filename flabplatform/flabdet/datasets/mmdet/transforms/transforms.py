@@ -14,7 +14,7 @@ from flabplatform.flabcv.transforms import Pad as MMCV_Pad
 from flabplatform.flabcv.transforms import RandomFlip as MMCV_RandomFlip
 from flabplatform.flabcv.transforms import Resize as MMCV_Resize
 from flabplatform.flabcv.transforms.utils import avoid_cache_randomness, cache_randomness
-from mmengine.dataset import BaseDataset
+from flabplatform.core.engine.dataset.abcdataset import BaseDataset
 from mmengine.utils import is_str
 from numpy import random
 

@@ -2,8 +2,8 @@ import collections
 import copy
 from typing import List, Optional, Sequence, Union
 
-from mmengine.dataset import ConcatDataset, force_full_init
-
+from mmengine.dataset import ConcatDataset
+from flabplatform.core.engine.dataset.abcdataset import force_full_init
 from flabplatform.flabseg.registry import DATASETS, TRANSFORMS
 
 

@@ -202,10 +202,9 @@ class AiAnnotation:
 def create_runner(args):
     """Create a runner instance."""
     cfg = Config.fromfile(args.config)
-    operation = cfg.operation
-    if "training" in operation:
-        operation = "training"
-    modelname = cfg[operation]['algoParams']['model']['type']
+    if "training" in cfg.operation:
+        cfg.operation = "training"
+    modelname = cfg[cfg.operation]['algoParams']['model']['type']
 
     if 'yolo' in modelname:
         from ..runner.yolorunner import YOLOWarpper

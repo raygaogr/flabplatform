@@ -1234,6 +1234,7 @@ class YOLOWarpper(YOLORunner):
                         dataset_purpose = "val"
                     if dataset["purpose"] == "activeLearning":
                         dataset_purpose = "train"
+                        exist_purpose.append(dataset["purpose"])
                     exist_purpose.append(dataset_purpose)
                     if len(dataset["samples"]) == 0:
                         input_dict["data"][dataset_purpose].append(dataset["sourceRoot"])

@@ -11,7 +11,7 @@ from torch.utils.data.dataset import ConcatDataset as _ConcatDataset
 
 from flabplatform.core.logging import print_log
 from flabplatform.core.registry import DATASETS
-from .base_dataset import BaseDataset, force_full_init
+from flabplatform.core.engine.dataset.abcdataset import BaseDataset, force_full_init
 
 
 @DATASETS.register_module()

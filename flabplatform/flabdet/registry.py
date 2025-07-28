@@ -48,13 +48,13 @@ RUNNER_CONSTRUCTORS = Registry(
     scope='flabplatform.flabdet',
     locations=['flabplatform.flabdet.engine'],
 )
-# # 循环，用于定义训练或测试过程
-# LOOPS = Registry(
-#     'loop',
-#     parent=ROOT_LOOPS,
-#     scope='flabplatform.flabdet',
-#     locations=['flabplatform.flabdet.engine'],
-# )
+# 循环，用于定义训练或测试过程
+LOOPS = Registry(
+    'loop',
+    parent=ROOT_LOOPS,
+    scope='flabplatform.flabdet',
+    locations=['flabplatform.flabdet'],
+)
 
 TRAINERS = Registry(
     'trainer',
@@ -76,13 +76,13 @@ HOOKS = Registry(
     scope='flabplatform.flabdet',
     locations=['flabplatform.flabdet.utils.mmdet.hooks'],
 )
-# # 日志处理器，用于处理标量日志数据
-# LOG_PROCESSORS = Registry(
-#     'log processor',
-#     scope='flabplatform.flabdet',
-#     parent=ROOT_LOG_PROCESSORS,
-#     locations=['flabplatform.flabdet.engine'],
-# )
+# 日志处理器，用于处理标量日志数据
+LOG_PROCESSORS = Registry(
+    'log processor',
+    scope='flabplatform.flabdet',
+    parent=ROOT_LOG_PROCESSORS,
+    locations=['flabplatform.flabdet'],
+)
 # # 优化器，用于优化模型权重，如`SGD`和`Adam`
 # OPTIMIZERS = Registry(
 #     'optimizer',

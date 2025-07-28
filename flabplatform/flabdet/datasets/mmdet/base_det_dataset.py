@@ -1,11 +1,11 @@
 import os.path as osp
 from typing import List, Optional
 
-from mmengine.dataset import BaseDataset
 
 from mmengine.utils import is_abs
 
 from flabplatform.flabdet.registry import DATASETS
+from flabplatform.core.engine.dataset.abcdataset import BaseDataset
 
 
 @DATASETS.register_module()
