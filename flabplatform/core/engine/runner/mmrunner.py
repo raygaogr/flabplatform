@@ -2553,4 +2553,3 @@ class MMTrainer:
         setattr(self.model, target, compiled_func)
         self.logger.info('Model has been "compiled". The first few iterations'
                          ' will be slow, please be patient.')
-

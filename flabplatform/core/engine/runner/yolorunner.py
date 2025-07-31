@@ -1250,7 +1250,6 @@ class YOLOWarpper(YOLORunner):
 
         overrides = parse_dict(cfg_dict, {})
         overrides = parse_data(overrides)
-        SETTINGS.update(dict(runs_dir=overrides["save_dir"]))
         SETTINGS.update(dict(datasets_dir=overrides["data"]["path"]))
         return cls(cfg=overrides)
         

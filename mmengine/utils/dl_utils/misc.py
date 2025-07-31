@@ -102,9 +102,9 @@ def mmcv_full_available() -> bool:
     Returns:
         bool: True if mmcv-full is installed else False.
     """
-    try:
-        import mmcv  # noqa: F401
-    except ImportError:
-        return False
-    ext_loader = pkgutil.find_loader('mmcv._ext')
+    # try:
+    #     import flabcv  # noqa: F401
+    # except ImportError:
+    #     return False
+    ext_loader = pkgutil.find_loader('flabplatform.flabcv._ext')
     return ext_loader is not None

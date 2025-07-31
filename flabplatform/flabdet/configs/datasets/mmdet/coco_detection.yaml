@@ -101,5 +101,3 @@ val_evaluator: &_val_evaluator
     # ann_file: 'datasets/coco8/images/val.json'
     # metric: 'bbox'
     # backend_args: *_backend_args
-
-test_evaluator: *_val_evaluator

@@ -568,7 +568,6 @@ def _update_losses(outputs: list, losses: dict) -> Tuple[list, dict]:
     return outputs, losses
 
 
-
 def get_flops(model,data_loader,num_images=10):
     result = {}
     avg_flops = []

@@ -10,8 +10,13 @@
     },
     "outputDir": "/home/ray/Projects/gitProjects/flabplatform/res/yolov8/detect",
     "mqTopic": "",
+<<<<<<< HEAD
     "modelDir": "/home/ray/Projects/gitProjects/flabplatform/res/yolov8/detect/models",
     "pretrainDir": ""
+=======
+    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect/models",
+    "pretrainDir": "D:/Workspace_gr/pyProjects/flabplatform/models/dab_detr"
+>>>>>>> 9f42b7f (更新评估和预测模块)
   },
   "training": {
     "algoParams": {
@@ -23,7 +28,7 @@
       "batch": 16, 
       "img_size": 640,
       "optimizer":  "Adam", 
-      "lr": 0.01, 
+      "lr": 0.001, 
       
       "amp": true,
       "weight_decay": 0.0005,

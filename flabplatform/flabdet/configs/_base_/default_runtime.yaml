@@ -13,6 +13,8 @@ default_hooks:
       save_best: 'fitness'
       rule: 'greater'
       interval: 1
+      save_best: 'fitness'
+      rule: 'greater'
     sampler_seed: 
       type: 'DistSamplerSeedHook'
     visualization: 

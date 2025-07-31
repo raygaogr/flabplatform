@@ -22,6 +22,7 @@ from flabplatform.core.registry import VISBACKENDS as ROOT_VISBACKENDS
 from flabplatform.core.registry import VISUALIZERS as ROOT_VISUALIZERS
 from flabplatform.core.registry import \
     WEIGHT_INITIALIZERS as ROOT_WEIGHT_INITIALIZERS
+from flabplatform.core.registry import OPTIM_WRAPPER_CONSTRUCTORS as ROOT_OPTIM_WRAPPER_CONSTRUCTORS
 from flabplatform.core.registry import Registry
 
 __all__ = [
@@ -83,28 +84,35 @@ LOG_PROCESSORS = Registry(
     parent=ROOT_LOG_PROCESSORS,
     locations=['flabplatform.flabdet'],
 )
-# # 优化器，用于优化模型权重，如`SGD`和`Adam`
-# OPTIMIZERS = Registry(
-#     'optimizer',
-#     scope='flabplatform.flabdet',
-#     parent=ROOT_OPTIMIZERS,
-#     locations=['flabplatform.flabdet.engine'],
-# )
-# # 优化器包装器，用于增强优化过程
-# OPTIM_WRAPPERS = Registry(
-#     'optimizer_wrapper',
-#     scope='flabplatform.flabdet',
-#     parent=ROOT_OPTIM_WRAPPERS,
-#     locations=['flabplatform.flabdet.engine'],
-# )
+# 优化器，用于优化模型权重，如`SGD`和`Adam`
+OPTIMIZERS = Registry(
+    'optimizer',
+    scope='flabplatform.flabdet',
+    parent=ROOT_OPTIMIZERS,
+    locations=['flabplatform.flabdet'],
+)
+# 优化器包装器，用于增强优化过程
+OPTIM_WRAPPERS = Registry(
+    'optimizer wrapper',
+    scope='flabplatform.flabdet',
+    parent=ROOT_OPTIM_WRAPPERS,
+    locations=['flabplatform.flabdet'],
+)
 
-# # 参数调度器，用于动态调整优化参数
-# PARAM_SCHEDULERS = Registry(
-#     'parameter scheduler',
-#     scope='flabplatform.flabdet',
-#     parent=ROOT_PARAM_SCHEDULERS,
-#     locations=['flabplatform.flabdet.engine'],
-# )
+OPTIM_WRAPPER_CONSTRUCTORS = Registry(
+    'optimizer wrapper constructor',
+    scope='flabplatform.flabdet',
+    parent=ROOT_OPTIM_WRAPPER_CONSTRUCTORS,
+    locations=['flabplatform.flabdet'],
+)
+
+# 参数调度器，用于动态调整优化参数
+PARAM_SCHEDULERS = Registry(
+    'parameter scheduler',
+    scope='flabplatform.flabdet',
+    parent=ROOT_PARAM_SCHEDULERS,
+    locations=['flabplatform.flabdet'],
+)
 
 #######################################################################
 #                   检测任务中datasets相关的注册器                      #
