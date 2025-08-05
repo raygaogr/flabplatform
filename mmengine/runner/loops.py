@@ -3,10 +3,10 @@ import bisect
 import logging
 import time
 from typing import Dict, List, Optional, Sequence, Tuple, Union
-
+import numpy as np 
 import torch
 from torch.utils.data import DataLoader
-
+import os.path as osp
 from mmengine.evaluator import Evaluator
 from flabplatform.core.logging import HistoryBuffer, print_log
 from flabplatform.core.registry import LOOPS
@@ -15,8 +15,15 @@ from mmengine.utils import is_list_of
 from .amp import autocast
 from .base_loop import BaseLoop
 from .utils import calc_dynamic_intervals
+from mmengine.device import get_device
+from mmengine.evaluator.mmevaluator import MMEvaluator
+from mmengine.analysis import get_model_complexity_info
 
-
+from mmengine.model import revert_sync_batchnorm
+from functools import partial
+from mmengine.analysis.print_helper import _format_size
+from mmengine.utils import digit_version
+from ultralytics.utils.ops import Profile
 @LOOPS.register_module()
 class EpochBasedTrainLoop(BaseLoop):
     """Loop for epoch-based training.
@@ -103,7 +110,12 @@ class EpochBasedTrainLoop(BaseLoop):
                     and (self._epoch % self.val_interval == 0
                          or self._epoch == self._max_epochs)):
                 self.runner.val_loop.run()
-
+        # run an extra val loop after training 
+        # best_pt_path = osp.join(self.runner.work_dir,'best.pt')
+        # assert osp.exists(best_pt_path), f"model best.pt does not exist in {best_pt_path}"
+        # self.runner.load_checkpoint(best_pt_path)
+        # self.runner.val_loop.run()
+        # self.runner.training = False
         self.runner.call_hook('after_train')
         return self.runner.model
 
@@ -365,7 +377,11 @@ class ValLoop(BaseLoop):
                 logger='current',
                 level=logging.WARNING)
         self.fp16 = fp16
-        self.val_loss: Dict[str, HistoryBuffer] = dict()
+        self.device = get_device()
+        if not self.evaluator:
+            self.evaluator = MMEvaluator() # compute metrics
+        self.flops = None # FLOPs
+        self.dt = Profile(device= self.device) # comput FPS 
 
     def run(self) -> dict:
         """Launch validation."""
@@ -373,21 +389,22 @@ class ValLoop(BaseLoop):
         self.runner.call_hook('before_val_epoch')
         self.runner.model.eval()
 
-        # clear val loss
-        self.val_loss.clear()
+        self.evaluator.init_metrics(self.dataloader.dataset,runner=self.runner) 
+        
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
-        # compute metrics
-        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        yolo_metrics = self.evaluator.get_stats()
+        # only compute FLOPs when the training is done 
+        if self.runner.epoch == self.runner.max_epochs:
+            self.evaluator.flops = get_flops(self.runner.model,self.dataloader)
 
-        if self.val_loss:
-            loss_dict = _parse_losses(self.val_loss, 'val')
-            metrics.update(loss_dict)
-
-        self.runner.call_hook('after_val_epoch', metrics=metrics)
+        self.evaluator.fps = len(self.dataloader.dataset) / self.dt.t 
+        self.evaluator.save_to_json(yolo_metrics)
+        self.evaluator.print_results(self.runner.logger)
+        self.runner.call_hook('after_val_epoch', metrics=yolo_metrics)
         self.runner.call_hook('after_val')
-        return metrics
+        return yolo_metrics
 
     @torch.no_grad()
     def run_iter(self, idx, data_batch: Sequence[dict]):
@@ -400,12 +417,13 @@ class ValLoop(BaseLoop):
         self.runner.call_hook(
             'before_val_iter', batch_idx=idx, data_batch=data_batch)
         # outputs should be sequence of BaseDataElement
-        with autocast(enabled=self.fp16):
-            outputs = self.runner.model.val_step(data_batch)
-
-        outputs, self.val_loss = _update_losses(outputs, self.val_loss)
-
-        self.evaluator.process(data_samples=outputs, data_batch=data_batch)
+        with self.dt:
+            with autocast(enabled=self.fp16):
+                outputs = self.runner.model.val_step(data_batch) # ouput & gt box xyxy format
+    
+        self.evaluator.update_metrics(outputs, data_batch)  
+        self.evaluator.preds_to_labelme(outputs,data_batch)
+        self.evaluator.finalize_metrics()
         self.runner.call_hook(
             'after_val_iter',
             batch_idx=idx,
@@ -548,3 +566,39 @@ def _update_losses(outputs: list, losses: dict) -> Tuple[list, dict]:
             for loss_value_i in loss_value:
                 losses[loss_name].update(loss_value_i.item())
     return outputs, losses
+
+
+
+def get_flops(model,data_loader,num_images=10):
+    result = {}
+    avg_flops = []
+    model = revert_sync_batchnorm(model)
+    model.eval()
+    _forward = model.forward
+
+    for idx, data_batch in enumerate(data_loader):
+        if idx == num_images:
+            break
+        data = model.data_preprocessor(data_batch)
+        result['ori_shape'] = data['data_samples'][0].ori_shape
+        result['pad_shape'] = data['data_samples'][0].pad_shape
+        if hasattr(data['data_samples'][0], 'batch_input_shape'):
+            result['pad_shape'] = data['data_samples'][0].batch_input_shape
+        model.forward = partial(_forward, data_samples=data['data_samples'])
+        outputs = get_model_complexity_info(
+            model,
+            None,
+            inputs=data['inputs'],
+            show_table=False,
+            show_arch=False)
+        avg_flops.append(outputs['flops'])
+        # params = outputs['params']
+        result['compute_type'] = 'dataloader: load a picture from the dataset'
+    del data_loader
+
+    mean_flops = _format_size(int(np.average(avg_flops)))
+    # params = _format_size(params)
+    # result['flops'] = mean_flops
+    # result['params'] = params
+
+    return mean_flops

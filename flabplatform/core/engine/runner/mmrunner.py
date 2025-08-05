@@ -103,7 +103,8 @@ class MMRunner(ABCRunner):
             "batch": ["train_dataloader.batch_size", "val_dataloader.batch_size"],
             "workers": ["train_dataloader.num_workers", "val_dataloader.num_workers"],
             "metafile": ["data_cfg"],
-            "rootDir": ["train_dataloader.dataset.data_root", "val_dataloader.dataset.data_root"]
+            "rootDir": ["train_dataloader.dataset.data_root", "val_dataloader.dataset.data_root"],
+            "pretrainDir":["load_from"]
         }
 
         def parse_dict(cfg, output_dict):
@@ -125,6 +126,8 @@ class MMRunner(ABCRunner):
                         v = "MultiStepLR"
                     if v == "training":
                         v = "train"
+                    if k == "pretrainDir":
+                        v = os.path.join(v,"best.pt")
                     for key in KEY_MAP[k]:
                         output_dict[key] = v
                 else:
@@ -622,6 +625,11 @@ class MMTrainer:
         )
 
         return runner
+
+    @property
+    def training(self):
+        """bool: Whether the runner is in training mode."""
+        return self.train_loop is not None 
 
     @property
     def experiment_name(self):
@@ -1447,7 +1455,8 @@ class MMTrainer:
                 return EVALUATOR.build(evaluator)
             # otherwise, default evalutor will be built
             else:
-                return Evaluator(evaluator)  # type: ignore
+                # return Evaluator(evaluator)  # type: ignore
+                return EVALUATOR.build(evaluator)
         elif isinstance(evaluator, list):
             # use the default `Evaluator`
             return Evaluator(evaluator)  # type: ignore

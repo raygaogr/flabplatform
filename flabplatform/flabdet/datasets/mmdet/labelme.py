@@ -288,7 +288,7 @@ class LabelmeDetDataset(BaseDetDataset):
 
         # TODO: need to change data_prefix['img'] to data_prefix['img_path']
         if Path(self.data_prefix["img"][0]).is_dir():
-            img_path = osp.join(self.data_prefix["img"][0], "image", img_info['file_name'])
+            img_path = osp.join(self.data_prefix["img"][0],"image", img_info['file_name'])
         else:
             img_path = osp.join(osp.dirname(self.data_prefix["img"][0]), img_info['file_name'])
         if self.data_prefix.get('seg', None):

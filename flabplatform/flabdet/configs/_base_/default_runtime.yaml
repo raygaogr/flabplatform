@@ -10,6 +10,8 @@ default_hooks:
       type: 'ParamSchedulerHook'
     checkpoint: 
       type: 'CheckpointHook'
+      save_best: 'fitness'
+      rule: 'greater'
       interval: 1
     sampler_seed: 
       type: 'DistSamplerSeedHook'
