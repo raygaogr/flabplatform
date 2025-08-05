@@ -5,12 +5,12 @@
   "task": "detect",
   "commonParams": {
     "datasets": {
-      "rootDir": "D:/Workspace_gr/pyProjects/flabplatform/datasets",
-      "metafile": "D:/Workspace_gr/pyProjects/flabplatform/datasets/metadata.json"
+      "rootDir": "/home/ray/Projects/gitProjects/flabplatform/datasets",
+      "metafile": "/home/ray/Projects/gitProjects/flabplatform/datasets/metadata.json"
     },
-    "outputDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect",
+    "outputDir": "/home/ray/Projects/gitProjects/flabplatform/res/yolov8/detect",
     "mqTopic": "",
-    "modelDir": "D:/Workspace_gr/pyProjects/flabplatform/res/yolov8/detect/models",
+    "modelDir": "/home/ray/Projects/gitProjects/flabplatform/res/yolov8/detect/models",
     "pretrainDir": ""
   },
   "training": {

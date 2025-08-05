@@ -97,9 +97,9 @@ val_dataloader: &_val_dataloader
 test_dataloader: *_val_dataloader
 
 val_evaluator: &_val_evaluator
-    type: 'CocoMetric'
-    ann_file: 'datasets/coco8/images/val.json'
-    metric: 'bbox'
-    backend_args: *_backend_args
+    type: 'MMEvaluator'
+    # ann_file: 'datasets/coco8/images/val.json'
+    # metric: 'bbox'
+    # backend_args: *_backend_args
 
 test_evaluator: *_val_evaluator
