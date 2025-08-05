@@ -543,7 +543,7 @@ class CheckpointHook(Hook):
                         f'The previous best checkpoint {best_ckpt_path} '
                         'is removed')
 
-            best_ckpt_name = 'best.pth'
+            best_ckpt_name = 'best.pt'
             # Replace illegal characters for filename with `_`
             best_ckpt_name = best_ckpt_name.replace('/', '_')
             if len(self.key_indicators) == 1:

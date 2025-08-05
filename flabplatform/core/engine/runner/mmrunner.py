@@ -127,7 +127,8 @@ class MMRunner(ABCRunner):
                     if v == "training":
                         v = "train"
                     if k == "pretrainDir":
-                        v = os.path.join(v,"best.pt")
+                        if v:
+                            v = os.path.join(v, "best.pt")
                     for key in KEY_MAP[k]:
                         output_dict[key] = v
                 else:
@@ -170,8 +171,8 @@ class MMRunner(ABCRunner):
             if len(raw_cfg["val_dataloader.dataset.data_prefix.img"]) == 0 and raw_cfg["mode"] == "train":
                 raw_cfg["val_dataloader.dataset.data_prefix.img"] = raw_cfg["train_dataloader.dataset.data_prefix.img"]
                 raw_cfg["val_dataloader.dataset.metainfo.classes"] = raw_cfg["train_dataloader.dataset.metainfo.classes"]
-            raw_cfg["optim_wrapper.type"] = 'AmpOptimWrapper'
-            raw_cfg["optim_wrapper.loss_scale"] = 'dynamic'
+            # raw_cfg["optim_wrapper.type"] = 'AmpOptimWrapper'
+            # raw_cfg["optim_wrapper.loss_scale"] = 'dynamic'
             return raw_cfg
 
         update_dict = parse_dict(cfg.to_dict(), {})
@@ -1836,7 +1837,7 @@ class MMTrainer:
         if resume_from is not None:
             self.resume(resume_from)
             self._has_loaded = True
-        elif self._load_from is not None:
+        elif self._load_from :
             self.load_checkpoint(self._load_from)
             self._has_loaded = True
 
