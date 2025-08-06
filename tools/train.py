@@ -85,6 +85,7 @@ def main():
     if operation == "training":
         # 训练：
         runner.train()
+        runner.export(format="onnx")  # 导出模型为ONNX格式
         # res = runner.predict("assets/test.jpg")  # 测试预测
         # for r in res:
         #     print(r)
@@ -95,9 +96,6 @@ def main():
         # AI标注：
         aianno = AiAnnotation(cfg)
         aianno.process_message(runner)
-
-    # # 导出：
-    # runner.export(format="onnx")
 
 if __name__ == '__main__':
     main()

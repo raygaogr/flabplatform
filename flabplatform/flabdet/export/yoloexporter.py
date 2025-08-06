@@ -383,6 +383,46 @@ class Exporter:
             f"output shape(s) {self.output_shape} ({file_size(file):.1f} MB)"
         )
 
+        task2id = {
+            "detect": "0002",
+            "segment": "0003",
+            "classify": "0004"
+        }
+        task2class = {
+            "detect": "GlassBracketModule",
+            "segment": "WeldSegInferModule",
+            "classify": "YOLOClsModule"
+        }
+
+        deploy_config = {
+            "modules" : {
+                task2id[self.args.task]: {
+                    "class": task2class[self.args.task],
+                    "init_params": {
+                        "cfgs": {
+                            "max_num": self.args.max_det,
+                            "conf": 0.2,
+                            "iou": self.args.iou,
+                            "sort_mathod": 0
+                        },
+                        "id_cfgs": dict(zip(map(str, data["names"].keys()), data["names"].values())),
+                    }
+                }
+            },
+            "graph" : {
+                "main" : [
+                    {
+                        "type": "Run",
+                        "model_id": task2id[self.args.task]
+                    }
+                ]
+            }
+        }
+
+        save_path = os.path.join(os.path.dirname(str(self.file)), "config.json")
+        with open(save_path, 'w', encoding='utf-8') as f:
+            json.dump(deploy_config, f, indent=4, ensure_ascii=False)   
+
         # Exports
         f = [""] * len(fmts)  # exported filenames
         if jit or ncnn:  # TorchScript
